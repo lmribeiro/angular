@@ -300,6 +300,9 @@ export function compileDeclareComponentFromMetadata(
   definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
   definitionMap.set('pipes', compileUsedPipeMetadata(meta));
 
+  definitionMap.set('providers', meta.providers);
+  definitionMap.set('viewProviders', meta.viewProviders);
+
   definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
   definitionMap.set('animations', meta.animations);
 

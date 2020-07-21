@@ -332,6 +332,12 @@ export interface R3DeclareComponentMetadata {
   };
 
   // DONE (not in design doc)
+  providers: o.Expression|null;
+
+  // DONE (not in design doc)
+  viewProviders: o.Expression|null;
+
+  // DONE (not in design doc)
   exportAs: string[] | null;
 
   // DONE

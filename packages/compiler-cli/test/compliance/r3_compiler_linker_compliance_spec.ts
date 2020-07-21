@@ -54,6 +54,8 @@ fdescribe('compiler linker compliance', () => {
                 '[a]': 'foo.bar',
                 '(click)': 'handleClick($event)',
               },
+              providers: [{ provide: 'a', useValue: 'A' }],
+              viewProviders: [{ provide: 'b', useValue: 'B' }],
             })
             export class MyComponent {
               @HostBinding() hostExpr: string;
@@ -173,6 +175,8 @@ fdescribe('compiler linker compliance', () => {
           pipes: {
             "multiply": function () { return MultiplyPipe; }
           },
+          providers: [{provide: 'a', useValue: 'A'}],
+          viewProviders: [{provide: 'b', useValue: 'B'}],
           exportAs: null,
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],
