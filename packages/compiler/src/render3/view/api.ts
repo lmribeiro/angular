@@ -304,6 +304,7 @@ export interface R3DeclareComponentMetadata {
   }[];
 
   // Map of pipe names to an expression representing the pipe class.
+  // DONE
   pipes: { [pipeName: string]: o.Expression | (() => o.Expression) };
 
   // Map of queries from this component.

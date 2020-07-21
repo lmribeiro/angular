@@ -30,7 +30,7 @@ fdescribe('compiler linker compliance', () => {
     const files = {
       app: {
         'spec.ts': `
-            import {Component, Directive, NgModule, Input, Output, EventEmitter, HostBinding, HostListener} from '@angular/core';
+            import {Component, Directive, NgModule, Pipe, Input, Output, EventEmitter, HostBinding, HostListener} from '@angular/core';
 
             export class BaseClass {}
 
@@ -49,7 +49,7 @@ fdescribe('compiler linker compliance', () => {
 
             @Component({
               selector: 'my-component',
-              template: '<child some-directive></child>!',
+              template: '<child some-directive>{{ 1 | multiply:2 }}</child>!',
               host: {
                 '[a]': 'foo.bar',
                 '(click)': 'handleClick($event)',
@@ -64,7 +64,10 @@ fdescribe('compiler linker compliance', () => {
               @Output('out') aliasedOut: EventEmitter<string>;
             }
 
-            @NgModule({declarations: [ChildComponent, SomeDirective, MyComponent]})
+            @Pipe({name: 'multiply'})
+            export class MultiplyPipe {}
+
+            @NgModule({declarations: [ChildComponent, SomeDirective, MyComponent, MultiplyPipe]})
             export class MyModule {}
           `
       }
@@ -93,6 +96,7 @@ fdescribe('compiler linker compliance', () => {
             properties: {}
           },
           directives: [],
+          pipes: {},
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],
           usesInheritance: true,
@@ -121,7 +125,7 @@ fdescribe('compiler linker compliance', () => {
         …
         MyComponent.ɵcmp = $r3$.$ngDeclareComponent({
           version: 1,
-          template: "<child some-directive></child>!",
+          template: "<child some-directive>{{ 1 | multiply:2 }}</child>!",
           styles: [],
           type: MyComponent,
           selector: "my-component",
@@ -147,7 +151,7 @@ fdescribe('compiler linker compliance', () => {
           directives: [
             {
               selector: "child",
-              type: ChildComponent,
+              type: function () { return ChildComponent; },
               inputs: {
                 input: "input",
                 aliasedIn: ["in", "aliasedIn"]
@@ -160,12 +164,15 @@ fdescribe('compiler linker compliance', () => {
             },
             {
               selector: "[some-directive]",
-              type: SomeDirective,
+              type: function () { return SomeDirective; },
               inputs: {},
               outputs: {},
               exportAs: null
             }
           ],
+          pipes: {
+            "multiply": function () { return MultiplyPipe; }
+          },
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],
           usesInheritance: false,

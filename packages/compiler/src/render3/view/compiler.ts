@@ -300,6 +300,7 @@ export function compileDeclareComponentFromMetadata(
 
   definitionMap.set('host', compileHostMetadata(meta.host));
   definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
+  definitionMap.set('pipes', compileUsedPipeMetadata(meta));
 
   if (meta.changeDetection !== undefined) {
     definitionMap.set('changeDetectionStrategy', o.importExpr(R3.ChangeDetectionStrategy).prop(core.ChangeDetectionStrategy[meta.changeDetection]));
@@ -413,20 +414,16 @@ export function compileComponentFromRender2(
 
 
 function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArrayExpr {
-  if (meta.directives.length === 0) {
-    return o.literalArr([]);
-  }
+  // TODO: this could be determined per directive instead of globally
+  const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure
+    ? expr => o.fn([], [new o.ReturnStatement(expr)])
+    : expr => expr;
 
   return o.literalArr(meta.directives.map(directive => {
     const dir = directive.meta;
     if (dir === null) {
       throw new Error('Compiling linked directive metadata requires additional metadata.');
     }
-
-    // TODO: this could be determined per directive instead of globally
-    const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure
-      ? expr => o.fn([], [new o.ReturnStatement(expr)])
-      : expr => expr;
 
     const dirMeta = new DefinitionMap();
     dirMeta.set('selector', o.literal(directive.selector));
@@ -435,6 +432,18 @@ function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArray
     dirMeta.set('outputs', mapToExpression(dir.outputs));
     dirMeta.set('exportAs', asLiteral(dir.exportAs));
     return dirMeta.toLiteralMap();
+  }));
+}
+
+function compileUsedPipeMetadata(meta: R3ComponentMetadata): o.LiteralMapExpr {
+  // TODO: this could be determined per directive instead of globally
+  const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure
+    ? expr => o.fn([], [new o.ReturnStatement(expr)])
+    : expr => expr;
+
+  // TODO: propose change to follow same structure as directives
+  return o.literalMap(Array.from(meta.pipes.entries()).map(([name, pipe]) => {
+    return {key: name, value: wrapType(pipe), quoted: true};
   }));
 }
 

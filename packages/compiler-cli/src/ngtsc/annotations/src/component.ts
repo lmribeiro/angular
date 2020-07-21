@@ -531,7 +531,7 @@ export class ComponentDecoratorHandler implements
         // TODO(alxhub): switch TemplateDefinitionBuilder over to using R3TargetBinder directly.
         // FIXME: this might be problematic :-)
         data.directives = usedDirectives;
-        data.pipes = pipes;
+        data.pipes = new Map(bound.getUsedPipes().map(name => [name, pipes.get(name)!]));
         data.wrapDirectivesAndPipesInClosure = wrapDirectivesAndPipesInClosure;
       } else {
         // Declaring the directiveDefs/pipeDefs arrays directly would require imports that would
