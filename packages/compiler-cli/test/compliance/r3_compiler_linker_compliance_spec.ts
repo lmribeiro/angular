@@ -80,12 +80,12 @@ fdescribe('compiler linker compliance', () => {
           selector: "child",
           exportAs: null,
           inputs: {
-            "input": "input",
-            "aliasedIn": ["in", "aliasedIn"]
+            input: "input",
+            aliasedIn: ["in", "aliasedIn"]
           },
           outputs: {
-            "output": "output",
-            "aliasedOut": "out"
+            output: "output",
+            aliasedOut: "out"
           },
           host: {
             attributes: {},
@@ -127,12 +127,12 @@ fdescribe('compiler linker compliance', () => {
           selector: "my-component",
           exportAs: null,
           inputs: {
-            "input": "input",
-            "aliasedIn": ["in", "aliasedIn"]
+            input: "input",
+            aliasedIn: ["in", "aliasedIn"]
           },
           outputs: {
-            "output": "output",
-            "aliasedOut": "out"
+            output: "output",
+            aliasedOut: "out"
           },
           host: {
             attributes: {},
@@ -149,12 +149,12 @@ fdescribe('compiler linker compliance', () => {
               selector: "child",
               type: ChildComponent,
               inputs: {
-                "input": "input",
-                "aliasedIn": ["in", "aliasedIn"]
+                input: "input",
+                aliasedIn: ["in", "aliasedIn"]
               },
               outputs: {
-                "output": "output",
-                "aliasedOut": "out"
+                output: "output",
+                aliasedOut: "out"
               },
               exportAs: null
             },

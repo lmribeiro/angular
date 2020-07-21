@@ -81,6 +81,7 @@ export function asLiteral(value: any): o.Expression {
   return o.literal(value, o.INFERRED_TYPE);
 }
 
+// TODO: rename function
 export function conditionallyCreateMapObjectLiteral(
     keys: {[key: string]: string|string[]}, keepDeclared?: boolean): o.Expression|null {
   if (Object.getOwnPropertyNames(keys).length > 0) {
@@ -89,7 +90,8 @@ export function conditionallyCreateMapObjectLiteral(
   return null;
 }
 
-function mapToExpression(
+// TODO: rename function
+export function mapToExpression(
     map: {[key: string]: string|string[]}, keepDeclared?: boolean): o.Expression {
   return o.literalMap(Object.getOwnPropertyNames(map).map(key => {
     // canonical syntax: `dirProp: publicProp`

@@ -30,7 +30,7 @@ import {prepareSyntheticListenerFunctionName, prepareSyntheticPropertyName, type
 import {R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3HostMetadata, R3QueryMetadata} from './api';
 import {MIN_STYLING_BINDING_SLOTS_REQUIRED, StylingBuilder, StylingInstructionCall} from './styling_builder';
 import {BindingScope, makeBindingParser, prepareEventListenerParameters, renderFlagCheckIfStmt, resolveSanitizationFn, TemplateDefinitionBuilder, ValueConverter} from './template';
-import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator} from './util';
+import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator, mapToExpression} from './util';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -295,17 +295,8 @@ export function compileDeclareComponentFromMetadata(
 
   definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
 
-  const inputs = o.literalMap(Object.keys(meta.inputs).map(key => {
-    const value = meta.inputs[key];
-    return {key, value: asLiteral(value), quoted: true};
-  }));
-  definitionMap.set('inputs', inputs);
-
-  const outputs = o.literalMap(Object.keys(meta.outputs).map(key => {
-    const value = meta.outputs[key];
-    return {key, value: o.literal(value), quoted: true};
-  }));
-  definitionMap.set('outputs', outputs);
+  definitionMap.set('inputs', mapToExpression(meta.inputs, true));
+  definitionMap.set('outputs', mapToExpression(meta.outputs));
 
   definitionMap.set('host', compileHostMetadata(meta.host));
   definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
@@ -440,19 +431,8 @@ function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArray
     const dirMeta = new DefinitionMap();
     dirMeta.set('selector', o.literal(directive.selector));
     dirMeta.set('type', wrapType(directive.expression));
-
-    const inputs = o.literalMap(Object.keys(dir.inputs).map(key => {
-      const value = dir.inputs[key];
-      return {key, value: asLiteral(value), quoted: true};
-    }));
-    dirMeta.set('inputs', inputs);
-
-    const outputs = o.literalMap(Object.keys(dir.outputs).map(key => {
-      const value = dir.outputs[key];
-      return {key, value: o.literal(value), quoted: true};
-    }));
-    dirMeta.set('outputs', outputs);
-
+    dirMeta.set('inputs', mapToExpression(dir.inputs, true));
+    dirMeta.set('outputs', mapToExpression(dir.outputs));
     dirMeta.set('exportAs', asLiteral(dir.exportAs));
     return dirMeta.toLiteralMap();
   }));
