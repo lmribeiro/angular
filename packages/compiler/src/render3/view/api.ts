@@ -334,6 +334,7 @@ export interface R3DeclareComponentMetadata {
   // DONE (not in design doc)
   exportAs: string[] | null;
 
+  // DONE
   animations: o.Expression | null;
 
   // Information about the specific settings of this component and the

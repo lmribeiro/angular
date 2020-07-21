@@ -34,7 +34,7 @@ fdescribe('compiler linker compliance', () => {
 
             export class BaseClass {}
 
-            @Component({selector: 'child', template: 'child-view'})
+            @Component({selector: 'child', template: 'child-view', exportAs: 'child1, child2', animations: []})
             export class ChildComponent extends BaseClass {
               @Input() input: string;
               @Input('in') aliasedIn: string;
@@ -81,7 +81,6 @@ fdescribe('compiler linker compliance', () => {
           styles: [],
           type: ChildComponent,
           selector: "child",
-          exportAs: null,
           inputs: {
             input: "input",
             aliasedIn: ["in", "aliasedIn"]
@@ -97,6 +96,8 @@ fdescribe('compiler linker compliance', () => {
           },
           directives: [],
           pipes: {},
+          exportAs: ["child1", "child2"],
+          animations: [],
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],
           usesInheritance: true,
@@ -129,7 +130,6 @@ fdescribe('compiler linker compliance', () => {
           styles: [],
           type: MyComponent,
           selector: "my-component",
-          exportAs: null,
           inputs: {
             input: "input",
             aliasedIn: ["in", "aliasedIn"]
@@ -160,7 +160,7 @@ fdescribe('compiler linker compliance', () => {
                 output: "output",
                 aliasedOut: "out"
               },
-              exportAs: null
+              exportAs: ["child1", "child2"]
             },
             {
               selector: "[some-directive]",
@@ -173,6 +173,7 @@ fdescribe('compiler linker compliance', () => {
           pipes: {
             "multiply": function () { return MultiplyPipe; }
           },
+          exportAs: null,
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],
           usesInheritance: false,

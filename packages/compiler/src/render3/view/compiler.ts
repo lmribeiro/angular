@@ -293,14 +293,15 @@ export function compileDeclareComponentFromMetadata(
   // e.g. `selector: 'some-dir'`
   definitionMap.set('selector', o.literal(meta.selector));
 
-  definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
-
   definitionMap.set('inputs', mapToExpression(meta.inputs, true));
   definitionMap.set('outputs', mapToExpression(meta.outputs));
 
   definitionMap.set('host', compileHostMetadata(meta.host));
   definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
   definitionMap.set('pipes', compileUsedPipeMetadata(meta));
+
+  definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
+  definitionMap.set('animations', meta.animations);
 
   if (meta.changeDetection !== undefined) {
     definitionMap.set('changeDetectionStrategy', o.importExpr(R3.ChangeDetectionStrategy).prop(core.ChangeDetectionStrategy[meta.changeDetection]));
