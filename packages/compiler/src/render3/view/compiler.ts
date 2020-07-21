@@ -279,125 +279,53 @@ export function compileComponentFromMetadata(
 export function compileDeclareComponentFromMetadata(
     meta: R3ComponentMetadata, constantPool: ConstantPool,
     bindingParser: BindingParser): R3ComponentDef {
-  const definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
-  addFeatures(definitionMap, meta);
+  const definitionMap = new DefinitionMap();
 
-  const selector = meta.selector && CssSelector.parse(meta.selector);
-  const firstSelector = selector && selector[0];
+  definitionMap.set('version', o.literal(1));
 
-  // e.g. `attr: ["class", ".my.app"]`
-  // This is optional an only included if the first selector of a component specifies attributes.
-  if (firstSelector) {
-    const selectorAttributes = firstSelector.getAttrs();
-    if (selectorAttributes.length) {
-      definitionMap.set(
-          'attrs',
-          constantPool.getConstLiteral(
-              o.literalArr(selectorAttributes.map(
-                  value => value != null ? o.literal(value) : o.literal(undefined))),
-              /* forceShared */ true));
-    }
+  definitionMap.set('template', o.literal(meta.template.template));
+
+  definitionMap.set('styles', asLiteral(meta.styles));
+
+  // e.g. `type: MyDirective`
+  definitionMap.set('type', meta.internalType);
+
+  // e.g. `selector: 'some-dir'`
+  definitionMap.set('selector', o.literal(meta.selector));
+
+  definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
+
+  const inputs = o.literalMap(Object.keys(meta.inputs).map(key => {
+    const value = meta.inputs[key];
+    return {key, value: asLiteral(value), quoted: true};
+  }));
+  definitionMap.set('inputs', inputs);
+
+  const outputs = o.literalMap(Object.keys(meta.outputs).map(key => {
+    const value = meta.outputs[key];
+    return {key, value: o.literal(value), quoted: true};
+  }));
+  definitionMap.set('outputs', outputs);
+
+  if (meta.changeDetection !== undefined) {
+    definitionMap.set('changeDetectionStrategy', o.importExpr({
+      name: core.ChangeDetectionStrategy[meta.changeDetection],
+      moduleName: '@angular/core',
+    }));
+  }
+  if (meta.encapsulation !== undefined) {
+    definitionMap.set('encapsulation', o.importExpr({
+      name: core.ViewEncapsulation[meta.encapsulation],
+      moduleName: '@angular/core',
+    }));
   }
 
-  // Generate the CSS matcher that recognize directive
-  let directiveMatcher: SelectorMatcher|null = null;
+  definitionMap.set('ngImport', o.importExpr(R3.core));
 
-  if (meta.directives.length > 0) {
-    const matcher = new SelectorMatcher();
-    for (const {selector, expression} of meta.directives) {
-      matcher.addSelectables(CssSelector.parse(selector), expression);
-    }
-    directiveMatcher = matcher;
-  }
+  debugger;
 
-  // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
-  const templateTypeName = meta.name;
-  const templateName = templateTypeName ? `${templateTypeName}_Template` : null;
 
-  const directivesUsed = new Set<o.Expression>();
-  const pipesUsed = new Set<o.Expression>();
-  const changeDetection = meta.changeDetection;
-
-  const template = meta.template;
-  const templateBuilder = new TemplateDefinitionBuilder(
-      constantPool, BindingScope.createRootScope(), 0, templateTypeName, null, null, templateName,
-      directiveMatcher, directivesUsed, meta.pipes, pipesUsed, R3.namespaceHTML,
-      meta.relativeContextFilePath, meta.i18nUseExternalIds);
-
-  const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
-
-  // We need to provide this so that dynamically generated components know what
-  // projected content blocks to pass through to the component when it is instantiated.
-  const ngContentSelectors = templateBuilder.getNgContentSelectors();
-  if (ngContentSelectors) {
-    definitionMap.set('ngContentSelectors', ngContentSelectors);
-  }
-
-  // e.g. `decls: 2`
-  definitionMap.set('decls', o.literal(templateBuilder.getConstCount()));
-
-  // e.g. `vars: 2`
-  definitionMap.set('vars', o.literal(templateBuilder.getVarCount()));
-
-  // e.g. `consts: [['one', 'two'], ['three', 'four']]
-  const consts = templateBuilder.getConsts();
-  if (consts.length > 0) {
-    definitionMap.set('consts', o.literalArr(consts));
-  }
-
-  definitionMap.set('template', templateFunctionExpression);
-
-  // e.g. `directives: [MyDirective]`
-  if (directivesUsed.size) {
-    let directivesExpr: o.Expression = o.literalArr(Array.from(directivesUsed));
-    if (meta.wrapDirectivesAndPipesInClosure) {
-      directivesExpr = o.fn([], [new o.ReturnStatement(directivesExpr)]);
-    }
-    definitionMap.set('directives', directivesExpr);
-  }
-
-  // e.g. `pipes: [MyPipe]`
-  if (pipesUsed.size) {
-    let pipesExpr: o.Expression = o.literalArr(Array.from(pipesUsed));
-    if (meta.wrapDirectivesAndPipesInClosure) {
-      pipesExpr = o.fn([], [new o.ReturnStatement(pipesExpr)]);
-    }
-    definitionMap.set('pipes', pipesExpr);
-  }
-
-  if (meta.encapsulation === null) {
-    meta.encapsulation = core.ViewEncapsulation.Emulated;
-  }
-
-  // e.g. `styles: [str1, str2]`
-  if (meta.styles && meta.styles.length) {
-    const styleValues = meta.encapsulation == core.ViewEncapsulation.Emulated ?
-        compileStyles(meta.styles, CONTENT_ATTR, HOST_ATTR) :
-        meta.styles;
-    const strings = styleValues.map(str => o.literal(str));
-    definitionMap.set('styles', o.literalArr(strings));
-  } else if (meta.encapsulation === core.ViewEncapsulation.Emulated) {
-    // If there is no style, don't generate css selectors on elements
-    meta.encapsulation = core.ViewEncapsulation.None;
-  }
-
-  // Only set view encapsulation if it's not the default value
-  if (meta.encapsulation !== core.ViewEncapsulation.Emulated) {
-    definitionMap.set('encapsulation', o.literal(meta.encapsulation));
-  }
-
-  // e.g. `animation: [trigger('123', [])]`
-  if (meta.animations !== null) {
-    definitionMap.set(
-        'data', o.literalMap([{key: 'animation', value: meta.animations, quoted: false}]));
-  }
-
-  // Only set the change detection flag if it's defined and it's not the default.
-  if (changeDetection != null && changeDetection !== core.ChangeDetectionStrategy.Default) {
-    definitionMap.set('changeDetection', o.literal(changeDetection));
-  }
-
-  const expression = o.importExpr(R3.defineComponent).callFn([definitionMap.toLiteralMap()]);
+  const expression = o.importExpr(R3.declareComponent).callFn([definitionMap.toLiteralMap()]);
 
 
   const typeParams = createDirectiveTypeParams(meta);
@@ -461,7 +389,7 @@ export function compileComponentFromRender2(
   const meta: R3ComponentMetadata = {
     ...directiveMetadataFromGlobalMetadata(component, outputCtx, reflector),
     selector: component.selector,
-    template: {nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors},
+    template: {template: '', nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors},
     directives: [],
     pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx),
     viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx),

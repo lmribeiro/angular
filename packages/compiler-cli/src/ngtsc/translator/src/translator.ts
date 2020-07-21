@@ -71,6 +71,13 @@ export class ImportManager {
   constructor(protected rewriter: ImportRewriter = new NoopImportRewriter(), private prefix = 'i') {
   }
 
+  generateNamespaceImport(moduleName: string): string {
+    if (!this.specifierToIdentifier.has(moduleName)) {
+      this.specifierToIdentifier.set(moduleName, `${this.prefix}${this.nextIndex++}`);
+    }
+    return this.specifierToIdentifier.get(moduleName)!;
+  }
+
   generateNamedImport(moduleName: string, originalSymbol: string): NamedImport {
     // First, rewrite the symbol name.
     const symbol = this.rewriter.rewriteSymbol(originalSymbol, moduleName);
@@ -83,11 +90,7 @@ export class ImportManager {
     }
 
     // If not, this symbol will be imported. Allocate a prefix for the imported module if needed.
-
-    if (!this.specifierToIdentifier.has(moduleName)) {
-      this.specifierToIdentifier.set(moduleName, `${this.prefix}${this.nextIndex++}`);
-    }
-    const moduleImport = this.specifierToIdentifier.get(moduleName)!;
+    const moduleImport = this.generateNamespaceImport(moduleName);
 
     return {moduleImport, symbol};
   }
@@ -284,7 +287,11 @@ class ExpressionTranslatorVisitor implements ExpressionVisitor, StatementVisitor
   visitExternalExpr(ast: ExternalExpr, context: Context): ts.PropertyAccessExpression
       |ts.Identifier {
     if (ast.value.name === null) {
-      throw new Error(`Import unknown module or symbol ${ast.value}`);
+      if (ast.value.moduleName === null) {
+        throw new Error(`Import unknown module or symbol ${ast.value}`);
+      }
+      const moduleImport = this.imports.generateNamespaceImport(ast.value.moduleName);
+      return ts.createIdentifier(moduleImport);
     }
     // If a moduleName is specified, this is a normal import. If there's no module name, it's a
     // reference to a global/ambient symbol.

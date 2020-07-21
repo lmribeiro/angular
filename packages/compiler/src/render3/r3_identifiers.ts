@@ -16,6 +16,11 @@ export class Identifiers {
   static TRANSFORM_METHOD = 'transform';
   static PATCH_DEPS = 'patchedDeps';
 
+  static core: o.ExternalReference = {
+    name: null,
+    moduleName: CORE,
+  };
+
   /* Instructions */
   static namespaceHTML: o.ExternalReference = {name: 'ɵɵnamespaceHTML', moduleName: CORE};
 
@@ -233,6 +238,16 @@ export class Identifiers {
   static resolveBody: o.ExternalReference = {name: 'ɵɵresolveBody', moduleName: CORE};
 
   static defineComponent: o.ExternalReference = {name: 'ɵɵdefineComponent', moduleName: CORE};
+  static declareComponent: o.ExternalReference = {name: '$ngDeclareComponent', moduleName: CORE};
+
+  static ChangeDetectionStrategy: o.ExternalReference = {
+    name: 'ChangeDetectionStrategy',
+    moduleName: CORE,
+  };
+  static ViewEncapsulation: o.ExternalReference = {
+    name: 'ViewEncapsulation',
+    moduleName: CORE,
+  };
 
   static setComponentScope: o.ExternalReference = {name: 'ɵɵsetComponentScope', moduleName: CORE};
 

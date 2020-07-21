@@ -125,6 +125,7 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
    * Information about the component's template.
    */
   template: {
+    template: string;
     /**
      * Parsed nodes of the template.
      */
@@ -210,18 +211,23 @@ export interface R3DeclareComponentMetadata {
   // Version number of the metadata format. This is used to evolve the metadata
   // interface later - the linker will be able to detect which version a library
   // is using and interpret its metadata accordingly.
+  // DONE
   version: 1;
 
   // The component's unparsed template string.
+  // DONE
   template: string;
 
   // CSS from inline styles and included styleUrls.
+  // DONE
   styles: string[];
 
   // Unparsed selector of the component.
+  // DONE
   selector: string;
 
   // Reference to the component class itself.
+  // DONE
   type: o.Expression;
 
   // Map of inputs, keyed by the name of the input field.
@@ -232,7 +238,8 @@ export interface R3DeclareComponentMetadata {
 
   // Information about host bindings present on the component.
   host: {
-    attributes: { [key: string]: o.Expression }; listeners: { [key: string]: string };
+    attributes: { [key: string]: o.Expression };
+    listeners: { [key: string]: string };
     properties: { [key: string]: string };
   };
 
@@ -284,12 +291,19 @@ export interface R3DeclareComponentMetadata {
     }
   };
 
+  // DONE (not in design doc)
+  exportAs: string[] | null;
+
   animations: o.Expression | null;
 
   // Information about the specific settings of this component and the
   // way it is meant to be compiled.
+  // DONE
   changeDetectionStrategy: ChangeDetectionStrategy;
+
+  // DONE
   encapsulation: ViewEncapsulation;
+
   interpolation: InterpolationConfig;
   i18nUseExternalIds: boolean;
   usesInheritance: boolean;
@@ -298,6 +312,7 @@ export interface R3DeclareComponentMetadata {
 
   // A reference to the `@angular/core` ES module, which allows access
   // to all Angular exports, including Ivy instructions.
+  // DONE
   ngImport: o.Expression;
 }
 
