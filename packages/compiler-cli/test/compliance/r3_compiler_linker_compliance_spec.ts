@@ -59,7 +59,7 @@ fdescribe('compiler linker compliance', () => {
             })
             export class MyComponent {
               @HostBinding() hostExpr: string;
-              @HostListener() hostListener() {}
+              @HostListener('mouseover', ['$event.target']) hostListener() {}
               @Input() input: string;
               @Input('in') aliasedIn: string;
               @Output() output: EventEmitter<string>;
@@ -144,10 +144,11 @@ fdescribe('compiler linker compliance', () => {
             attributes: {},
             listeners: {
               "click": "handleClick($event)",
-              "hostListener": "hostListener()"
+              "mouseover": "hostListener($event.target)"
             },
             properties: {
-              "a": "foo.bar", "hostExpr": "hostExpr"
+              "a": "foo.bar",
+              "hostExpr": "hostExpr"
             }
           },
           directives: [
