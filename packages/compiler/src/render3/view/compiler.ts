@@ -307,6 +307,9 @@ export function compileDeclareComponentFromMetadata(
   }));
   definitionMap.set('outputs', outputs);
 
+  definitionMap.set('host', compileHostMetadata(meta.host));
+  definitionMap.set('directives', compileUsedDirectiveMetadata(meta));
+
   if (meta.changeDetection !== undefined) {
     definitionMap.set('changeDetectionStrategy', o.importExpr(R3.ChangeDetectionStrategy).prop(core.ChangeDetectionStrategy[meta.changeDetection]));
   }
@@ -314,10 +317,13 @@ export function compileDeclareComponentFromMetadata(
     definitionMap.set('encapsulation', o.importExpr(R3.ViewEncapsulation).prop(core.ViewEncapsulation[meta.encapsulation]));
   }
 
+  definitionMap.set('interpolation', o.literalArr([o.literal(meta.interpolation.start), o.literal(meta.interpolation.end)]));
+
+  definitionMap.set('usesInheritance', o.literal(meta.usesInheritance));
+  definitionMap.set('fullInheritance', o.literal(meta.fullInheritance));
+  definitionMap.set('usesOnChanges', o.literal(meta.lifecycle.usesOnChanges));
+
   definitionMap.set('ngImport', o.importExpr(R3.core));
-
-  debugger;
-
 
   const expression = o.importExpr(R3.declareComponent).callFn([definitionMap.toLiteralMap()]);
 
@@ -412,6 +418,69 @@ export function compileComponentFromRender2(
 
   // Create the partial class to be merged with the actual class.
   outputCtx.statements.push(ngFactoryDefStatement, componentDefStatement);
+}
+
+
+function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArrayExpr {
+  if (meta.directives.length === 0) {
+    return o.literalArr([]);
+  }
+
+  return o.literalArr(meta.directives.map(directive => {
+    const dir = directive.meta;
+    if (dir === null) {
+      throw new Error('Compiling linked directive metadata requires additional metadata.');
+    }
+
+    // TODO: this could be determined per directive instead of globally
+    const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure
+      ? expr => o.fn([], [new o.ReturnStatement(expr)])
+      : expr => expr;
+
+    const dirMeta = new DefinitionMap();
+    dirMeta.set('selector', o.literal(directive.selector));
+    dirMeta.set('type', wrapType(directive.expression));
+
+    const inputs = o.literalMap(Object.keys(dir.inputs).map(key => {
+      const value = dir.inputs[key];
+      return {key, value: asLiteral(value), quoted: true};
+    }));
+    dirMeta.set('inputs', inputs);
+
+    const outputs = o.literalMap(Object.keys(dir.outputs).map(key => {
+      const value = dir.outputs[key];
+      return {key, value: o.literal(value), quoted: true};
+    }));
+    dirMeta.set('outputs', outputs);
+
+    dirMeta.set('exportAs', asLiteral(dir.exportAs));
+    return dirMeta.toLiteralMap();
+  }));
+}
+
+function compileHostMetadata(meta: R3HostMetadata): o.LiteralMapExpr {
+  const hostMetadata = new DefinitionMap();
+  const attributes = o.literalMap(Object.keys(meta.attributes).map(key => {
+    const value = meta.attributes[key];
+    return {key, value, quoted: true};
+  }));
+  hostMetadata.set('attributes', attributes);
+
+  const listeners = o.literalMap(Object.keys(meta.listeners).map(key => {
+    const value = meta.listeners[key];
+    return {key, value: o.literal(value), quoted: true};
+  }));
+  hostMetadata.set('listeners', listeners);
+
+  const properties = o.literalMap(Object.keys(meta.properties).map(key => {
+    const value = meta.properties[key];
+    return {key, value: o.literal(value), quoted: true};
+  }));
+  hostMetadata.set('properties', properties);
+
+  // TODO: meta.host.specialAttributes needs to be mapped
+
+  return hostMetadata.toLiteralMap();
 }
 
 /**

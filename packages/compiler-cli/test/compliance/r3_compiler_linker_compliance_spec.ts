@@ -32,8 +32,17 @@ fdescribe('compiler linker compliance', () => {
         'spec.ts': `
             import {Component, Directive, NgModule, Input, Output, EventEmitter, HostBinding, HostListener} from '@angular/core';
 
+            export class BaseClass {}
+
             @Component({selector: 'child', template: 'child-view'})
-            export class ChildComponent {}
+            export class ChildComponent extends BaseClass {
+              @Input() input: string;
+              @Input('in') aliasedIn: string;
+              @Output() output: EventEmitter<string>;
+              @Output('out') aliasedOut: EventEmitter<string>;
+
+              ngOnChanges() {}
+            }
 
             @Directive({selector: '[some-directive]'})
             export class SomeDirective {}
@@ -70,15 +79,31 @@ fdescribe('compiler linker compliance', () => {
           type: ChildComponent,
           selector: "child",
           exportAs: null,
-          inputs: {},
-          outputs: {},
+          inputs: {
+            "input": "input",
+            "aliasedIn": ["in", "aliasedIn"]
+          },
+          outputs: {
+            "output": "output",
+            "aliasedOut": "out"
+          },
+          host: {
+            attributes: {},
+            listeners: {},
+            properties: {}
+          },
+          directives: [],
           encapsulation: i0.ViewEncapsulation.Emulated,
+          interpolation: ["{{", "}}"],
+          usesInheritance: true,
+          fullInheritance: false,
+          usesOnChanges: true,
           ngImport: i0
         });
 `;
 
     const ChildComponentFactory =
-      `ChildComponent.ɵfac = function ChildComponent_Factory(t) { return new (t || ChildComponent)(); };`;
+      `ChildComponent.ɵfac = function ChildComponent_Factory(t) { return ɵChildComponent_BaseFactory(t || ChildComponent); };`;
 
     // SomeDirective definition should be:
     const SomeDirectiveDefinition = `
@@ -109,7 +134,43 @@ fdescribe('compiler linker compliance', () => {
             "output": "output",
             "aliasedOut": "out"
           },
+          host: {
+            attributes: {},
+            listeners: {
+              "click": "handleClick($event)",
+              "hostListener": "hostListener()"
+            },
+            properties: {
+              "a": "foo.bar", "hostExpr": "hostExpr"
+            }
+          },
+          directives: [
+            {
+              selector: "child",
+              type: ChildComponent,
+              inputs: {
+                "input": "input",
+                "aliasedIn": ["in", "aliasedIn"]
+              },
+              outputs: {
+                "output": "output",
+                "aliasedOut": "out"
+              },
+              exportAs: null
+            },
+            {
+              selector: "[some-directive]",
+              type: SomeDirective,
+              inputs: {},
+              outputs: {},
+              exportAs: null
+            }
+          ],
           encapsulation: i0.ViewEncapsulation.Emulated,
+          interpolation: ["{{", "}}"],
+          usesInheritance: false,
+          fullInheritance: false,
+          usesOnChanges: false,
           ngImport: i0
         });
       `;

@@ -117,6 +117,30 @@ export interface R3DirectiveMetadata {
   providers: o.Expression|null;
 }
 
+// NOTE: this is basically DirectiveMeta from the T2 Binder.
+export interface R3UsedDirectiveMetadata {
+  /**
+   * Set of inputs which this directive claims.
+   *
+   * Goes from property names to field names.
+   */
+  inputs: { [property: string]: string | [string, string] };
+
+  /**
+   * Set of outputs which this directive claims.
+   *
+   * Goes from property names to field names.
+   */
+  outputs: { [property: string]: string };
+
+  /**
+   * Name under which the directive is exported, if any (exportAs in Angular).
+   *
+   * Null otherwise
+   */
+  exportAs: string[] | null;
+}
+
 /**
  * Information needed to compile a component for the render3 runtime.
  */
@@ -148,7 +172,10 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
    * A list of directive selectors and an expression referencing the directive type which are in the
    * scope of the compilation.
    */
-  directives: {selector: string, expression: o.Expression}[];
+  // FIXME: this type literal and `R3UsedDirectiveMetadata` should probably be just
+  //  `R3UsedDirectiveMetadata`. Also, the JIT compiler is not interested in passing the extra
+  //  metadata, so it's optional.
+  directives: {selector: string, expression: o.Expression, meta: R3UsedDirectiveMetadata|null}[];
 
   /**
    * Whether to wrap the 'directives' and/or `pipes` array, if one is generated, in a closure.
@@ -231,15 +258,21 @@ export interface R3DeclareComponentMetadata {
   type: o.Expression;
 
   // Map of inputs, keyed by the name of the input field.
+  // DONE
   inputs: { [fieldName: string]: string | [string, string] };
 
   // Map of outputs, keyed by the name of the output field.
+  // DONE
   outputs: { [fieldName: string]: string };
 
   // Information about host bindings present on the component.
+  // DONE
   host: {
+    // DONE
     attributes: { [key: string]: o.Expression };
+    // DONE
     listeners: { [key: string]: string };
+    // DONE
     properties: { [key: string]: string };
   };
 
@@ -247,20 +280,26 @@ export interface R3DeclareComponentMetadata {
   // metadata for each directive to attribute bindings and references within
   // the template to each directive specifically, if the runtime instructions
   // support this.
+  // DONE
   directives: {
     // Selector of the directive.
+    // DONE
     selector: string;
 
     // Reference to the directive class (possibly a forward reference).
+    // DONE
     type: o.Expression | (() => o.Expression);
 
     // Property names of the directive's inputs.
+    // DONE
     inputs: string[];
 
     // Event names of the directive's outputs.
+    // DONE
     outputs: string[];
 
     // Names by which this directive exports itself for references.
+    // DONE
     exportAs: string[];
   }[];
 
@@ -304,10 +343,14 @@ export interface R3DeclareComponentMetadata {
   // DONE
   encapsulation: ViewEncapsulation;
 
+  // DONE
   interpolation: InterpolationConfig;
   i18nUseExternalIds: boolean;
+  // DONE
   usesInheritance: boolean;
+  // DONE
   fullInheritance: boolean;
+  // DONE
   usesOnChanges: boolean;
 
   // A reference to the `@angular/core` ES module, which allows access
