@@ -7,7 +7,7 @@
  */
 
 
-import {CompilerFacade, CoreEnvironment, ExportedCompilerFacade, R3ComponentMetadataFacade, R3DependencyMetadataFacade, R3DirectiveMetadataFacade, R3FactoryDefMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade, R3QueryMetadataFacade, StringMap, StringMapWithRename} from './compiler_facade_interface';
+import {CompilerFacade, CoreEnvironment, ExportedCompilerFacade, R3ComponentMetadataFacade, R3DeclareComponentMetadata, R3DependencyMetadataFacade, R3DirectiveMetadataFacade, R3FactoryDefMetadataFacade, R3InjectableMetadataFacade, R3InjectorMetadataFacade, R3NgModuleMetadataFacade, R3PipeMetadataFacade, R3QueryMetadataFacade, StringMap, StringMapWithRename} from './compiler_facade_interface';
 import {ConstantPool} from './constant_pool';
 import {HostBinding, HostListener, Input, Output, Type} from './core';
 import {Identifiers} from './identifiers';
@@ -159,6 +159,75 @@ export class CompilerFacadeImpl implements CompilerFacade {
     const res = compileComponentFromMetadata(
         metadata, constantPool, makeBindingParser(interpolationConfig));
     const jitExpressionSourceMap = `ng:///${facade.name}.js`;
+    return this.jitExpression(
+        res.expression, angularCoreEnv, jitExpressionSourceMap, constantPool.statements);
+  }
+
+  compilePrelinkedComponent(
+      angularCoreEnv: CoreEnvironment, sourceMapUrl: string,
+      facade: R3DeclareComponentMetadata): any {
+    // The ConstantPool is a requirement of the JIT'er.
+    const constantPool = new ConstantPool();
+
+    const interpolationConfig = facade.interpolation ?
+        InterpolationConfig.fromArray(facade.interpolation) :
+        DEFAULT_INTERPOLATION_CONFIG;
+    // Parse the template and check for errors.
+    const template = parseTemplate(
+        facade.template, sourceMapUrl,
+        {preserveWhitespaces: /*facade.preserveWhitespaces*/ false, interpolationConfig});
+    if (template.errors !== undefined) {
+      const errors = template.errors.map(err => err.toString()).join(', ');
+      throw new Error(
+          `Errors during JIT compilation of template for ${facade.type.name}: ${errors}`);
+    }
+    const pipes = new Map();
+    for (const pipeName of Object.keys(facade.pipes)) {
+      pipes.set(pipeName, facade.pipes[pipeName]);
+    }
+
+    const metadata: R3ComponentMetadata = {
+      typeSourceSpan: null!,
+      type: wrapReference(facade.type),
+      typeArgumentCount: 0,
+      internalType: new WrappedNodeExpr(facade.type),
+      deps: null,
+      host: {...facade.host, specialAttributes: {/* TODO */}},
+      inputs: facade.inputs,
+      outputs: facade.outputs,
+      queries: [/* TODO */],
+      viewQueries: [/* TODO */],
+      providers:
+          /* TODO facade.providers != null ? new WrappedNodeExpr(facade.providers) : null */ null,
+      fullInheritance: false,
+      selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(),
+      template: {
+        template: facade.template,
+        nodes: template.nodes,
+        ngContentSelectors: template.ngContentSelectors,
+      },
+      wrapDirectivesAndPipesInClosure: false,
+      styles: [...facade.styles, ...template.styles],
+      encapsulation: facade.encapsulation as any,
+      interpolation: interpolationConfig,
+      changeDetection: facade.changeDetectionStrategy,
+      animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null,
+      viewProviders: /* TODO facade.viewProviders != null ? new
+                        WrappedNodeExpr(facade.viewProviders) : null */
+          null,
+      relativeContextFilePath: '',
+      i18nUseExternalIds: true,
+      pipes,
+      directives:
+          facade.directives.map(d => ({...d, expression: new WrappedNodeExpr(d.type), meta: null})),
+      exportAs: facade.exportAs,
+      lifecycle: {usesOnChanges: facade.usesOnChanges},
+      name: facade.type.name,
+      usesInheritance: facade.usesInheritance,
+    };
+    const res = compileComponentFromMetadata(
+        metadata, constantPool, makeBindingParser(interpolationConfig));
+    const jitExpressionSourceMap = `ng:///${facade.type.name}.js`;
     return this.jitExpression(
         res.expression, angularCoreEnv, jitExpressionSourceMap, constantPool.statements);
   }

@@ -39,6 +39,8 @@ export interface CompilerFacade {
       angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3DirectiveMetadataFacade): any;
   compileComponent(
       angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3ComponentMetadataFacade): any;
+  compilePrelinkedComponent(
+      angularCoreEnv: CoreEnvironment, sourceMapUrl: string, decl: R3DeclareComponentMetadata): any;
   compileFactory(
       angularCoreEnv: CoreEnvironment, sourceMapUrl: string, meta: R3FactoryDefMetadataFacade): any;
 
@@ -194,3 +196,105 @@ export interface ParseSourceSpan {
   end: any;
   details: any;
 }
+
+export interface R3DeclareComponentMetadata {
+  // Version number of the metadata format. This is used to evolve the metadata
+  // interface later - the linker will be able to detect which version a library
+  // is using and interpret its metadata accordingly.
+  version: 1;
+
+  // The component's unparsed template string.
+  template: string;
+
+  // CSS from inline styles and included styleUrls.
+  styles: string[];
+
+  // Unparsed selector of the component.
+  selector: string;
+
+  // Reference to the component class itself.
+  type: OpaqueExpression;
+
+  // Map of inputs, keyed by the name of the input field.
+  inputs: {[fieldName: string]: string|[string, string]};
+
+  // Map of outputs, keyed by the name of the output field.
+  outputs: {[fieldName: string]: string};
+
+  // Information about host bindings present on the component.
+  host: {
+    attributes: {[key: string]: OpaqueExpression}; listeners: {[key: string]: string};
+    properties: {[key: string]: string};
+  };
+
+  // List of directives which matched in the template, including sufficient
+  // metadata for each directive to attribute bindings and references within
+  // the template to each directive specifically, if the runtime instructions
+  // support this.
+  directives: {
+    // Selector of the directive.
+    selector: string;
+
+    // Reference to the directive class (possibly a forward reference).
+    type: OpaqueExpression | OpaqueExpressionFactory;
+
+    // Property names of the directive's inputs.
+    inputs: string[];
+
+    // Event names of the directive's outputs.
+    outputs: string[];
+
+    // Names by which this directive exports itself for references.
+    exportAs: string[];
+  }[];
+
+  // Map of pipe names to an expression representing the pipe class or
+  // a function to call that returns the class.
+  pipes: {[pipeName: string]: OpaqueExpression|OpaqueExpressionFactory};
+
+  // Map of queries from this component.
+  queries: {
+    [fieldName: string]: {
+      // Whether the query is a view query or content query.
+      type: 'view'|'content';
+
+      // First result or many results?
+      first: boolean;
+
+      // Predicate of the query, which can be either a DI token or
+      // a list of refs.
+      predicate: OpaqueExpression | string[];
+
+      // Is this a deep query or not?
+      descendants: boolean;
+
+      // What to read from the injector of the matched node?
+      read: OpaqueExpression | null;
+
+      // Whether the query resolves statically or updates over time?
+      static: boolean;
+    }
+  };
+
+  animations: OpaqueExpression|null;
+
+  exportAs: string[]|null;
+
+  // Information about the specific settings of this component and the
+  // way it is meant to be compiled.
+  changeDetectionStrategy: ChangeDetectionStrategy;
+  encapsulation: ViewEncapsulation;
+  interpolation: InterpolationConfig;
+  i18nUseExternalIds: boolean;
+  usesInheritance: boolean;
+  fullInheritance: boolean;
+  usesOnChanges: boolean;
+
+  // A reference to the `@angular/core` ES module, which allows access
+  // to all Angular exports, including Ivy instructions.
+  ngImport: OpaqueExpression;
+}
+
+export type OpaqueExpression = any;
+export type OpaqueExpressionFactory = () => any;
+export type InterpolationConfig = [string, string];
