@@ -9,7 +9,7 @@
 import {Type} from '@angular/compiler';
 import * as ts from 'typescript';
 
-import {ComponentDecoratorHandler, DirectiveDecoratorHandler, InjectableDecoratorHandler, NgModuleDecoratorHandler, NoopReferencesRegistry, PipeDecoratorHandler, ReferencesRegistry} from '../../annotations';
+import {CompilationModel, ComponentDecoratorHandler, DirectiveDecoratorHandler, InjectableDecoratorHandler, NgModuleDecoratorHandler, NoopReferencesRegistry, PipeDecoratorHandler, ReferencesRegistry} from '../../annotations';
 import {CycleAnalyzer, ImportGraph} from '../../cycles';
 import {ErrorCode, ngErrorCode} from '../../diagnostics';
 import {checkForPrivateExports, ReferenceGraph} from '../../entry_point';
@@ -700,6 +700,10 @@ export class NgCompiler {
 
     const defaultImportTracker = new DefaultImportTracker();
 
+    const compilationModel = this.options.compilationModel === 'prelink' ?
+        CompilationModel.Prelink :
+        CompilationModel.Aot;
+
     // Set up the IvyCompilation, which manages state for the Ivy transformer.
     const handlers: DecoratorHandler<unknown, unknown, unknown>[] = [
       new ComponentDecoratorHandler(
@@ -709,7 +713,7 @@ export class NgCompiler {
           this.options.enableI18nLegacyMessageIdFormat !== false,
           this.options.i18nNormalizeLineEndingsInICUs, this.moduleResolver, this.cycleAnalyzer,
           refEmitter, defaultImportTracker, this.incrementalDriver.depGraph, injectableRegistry,
-          this.closureCompilerEnabled),
+          this.closureCompilerEnabled, compilationModel),
       // TODO(alxhub): understand why the cast here is necessary (something to do with `null`
       // not being assignable to `unknown` when wrapped in `Readonly`).
       // clang-format off

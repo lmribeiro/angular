@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {compileComponentFromMetadata, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DomElementSchemaRegistry, Expression, ExternalExpr, Identifiers, InterpolationConfig, LexerRange, makeBindingParser, ParseError, ParseSourceFile, parseTemplate, ParseTemplateOptions, R3ComponentMetadata, R3FactoryTarget, R3TargetBinder, SchemaMetadata, SelectorMatcher, Statement, TmplAstNode, WrappedNodeExpr} from '@angular/compiler';
+import {compileComponentFromMetadata, compileDeclareComponentFromMetadata, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DomElementSchemaRegistry, Expression, ExternalExpr, Identifiers, InterpolationConfig, LexerRange, makeBindingParser, ParseError, ParseSourceFile, parseTemplate, R3ComponentMetadata, R3FactoryTarget, R3TargetBinder, SchemaMetadata, SelectorMatcher, Statement, TmplAstNode, WrappedNodeExpr} from '@angular/compiler';
 import * as ts from 'typescript';
 
 import {CycleAnalyzer} from '../../cycles';
@@ -25,12 +25,12 @@ import {TemplateSourceMapping, TypeCheckContext} from '../../typecheck/api';
 import {tsSourceMapBug29300Fixed} from '../../util/src/ts_source_map_bug_29300';
 import {SubsetOfKeys} from '../../util/src/typescript';
 
-import {ResourceLoader} from './api';
+import {CompilationModel, ResourceLoader} from './api';
 import {createValueHasWrongTypeError, getDirectiveDiagnostics, getProviderDiagnostics} from './diagnostics';
 import {extractDirectiveMetadata, parseFieldArrayValue} from './directive';
 import {compileNgFactoryDefField} from './factory';
 import {generateSetClassMetadataCall} from './metadata';
-import {findAngularDecorator, isAngularCoreReference, isExpressionForwardReference, makeDuplicateDeclarationError, readBaseClass, resolveProvidersRequiringFactory, unwrapExpression, wrapFunctionExpressionsInParens} from './util';
+import {findAngularDecorator, isAngularCoreReference, isExpressionForwardReference, readBaseClass, resolveProvidersRequiringFactory, unwrapExpression, wrapFunctionExpressionsInParens} from './util';
 
 const EMPTY_MAP = new Map<string, Expression>();
 const EMPTY_ARRAY: any[] = [];
@@ -87,7 +87,7 @@ export class ComponentDecoratorHandler implements
       private refEmitter: ReferenceEmitter, private defaultImportRecorder: DefaultImportRecorder,
       private depTracker: DependencyTracker|null,
       private injectableRegistry: InjectableClassRegistry,
-      private annotateForClosureCompiler: boolean) {}
+      private annotateForClosureCompiler: boolean, private compilationModel: CompilationModel) {}
 
   private literalCache = new Map<Decorator, ts.ObjectLiteralExpression>();
   private elementSchemaRegistry = new DomElementSchemaRegistry();
@@ -571,7 +571,13 @@ export class ComponentDecoratorHandler implements
   compile(
       node: ClassDeclaration, analysis: Readonly<ComponentAnalysisData>,
       resolution: Readonly<ComponentResolutionData>, pool: ConstantPool): CompileResult[] {
+
     const meta: R3ComponentMetadata = {...analysis.meta, ...resolution};
+
+    // FIXME: Consider introducing `compilePrelink`
+    if (this.compilationModel === CompilationModel.Prelink) {
+      compileDeclareComponentFromMetadata(meta, pool, makeBindingParser());
+    }
     const res = compileComponentFromMetadata(meta, pool, makeBindingParser());
     const factoryRes = compileNgFactoryDefField(
         {...meta, injectFn: Identifiers.directiveInject, target: R3FactoryTarget.Component});

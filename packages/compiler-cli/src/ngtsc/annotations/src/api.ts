@@ -53,3 +53,8 @@ export interface ResourceLoader {
    */
   load(resolvedUrl: string): string;
 }
+
+export const enum CompilationModel {
+  Aot,
+  Prelink,
+}
