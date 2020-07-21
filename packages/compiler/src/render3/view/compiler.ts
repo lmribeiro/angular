@@ -308,16 +308,10 @@ export function compileDeclareComponentFromMetadata(
   definitionMap.set('outputs', outputs);
 
   if (meta.changeDetection !== undefined) {
-    definitionMap.set('changeDetectionStrategy', o.importExpr({
-      name: core.ChangeDetectionStrategy[meta.changeDetection],
-      moduleName: '@angular/core',
-    }));
+    definitionMap.set('changeDetectionStrategy', o.importExpr(R3.ChangeDetectionStrategy).prop(core.ChangeDetectionStrategy[meta.changeDetection]));
   }
   if (meta.encapsulation !== undefined) {
-    definitionMap.set('encapsulation', o.importExpr({
-      name: core.ViewEncapsulation[meta.encapsulation],
-      moduleName: '@angular/core',
-    }));
+    definitionMap.set('encapsulation', o.importExpr(R3.ViewEncapsulation).prop(core.ViewEncapsulation[meta.encapsulation]));
   }
 
   definitionMap.set('ngImport', o.importExpr(R3.core));
