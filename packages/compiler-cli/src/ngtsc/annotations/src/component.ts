@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {compileComponentFromMetadata, compileDeclareComponentFromMetadata, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DomElementSchemaRegistry, Expression, ExternalExpr, Identifiers, InterpolationConfig, LexerRange, makeBindingParser, ParseError, ParseSourceFile, parseTemplate, R3ComponentMetadata, R3DirectiveMetadata, R3FactoryTarget, R3TargetBinder, SchemaMetadata, SelectorMatcher, Statement, TmplAstNode, WrappedNodeExpr, R3UsedDirectiveMetadata} from '@angular/compiler';
+import {compileComponentFromMetadata, compileDeclareComponentFromMetadata, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DomElementSchemaRegistry, Expression, ExternalExpr, Identifiers, InterpolationConfig, LexerRange, makeBindingParser, ParseError, ParseSourceFile, parseTemplate, R3ComponentMetadata, R3DirectiveMetadata, R3FactoryTarget, R3TargetBinder, R3UsedDirectiveMetadata, SchemaMetadata, SelectorMatcher, Statement, TmplAstNode, WrappedNodeExpr} from '@angular/compiler';
 import * as ts from 'typescript';
 
 import {CycleAnalyzer} from '../../cycles';
@@ -443,7 +443,7 @@ export class ComponentDecoratorHandler implements
 
     const data: ComponentResolutionData = {
       directives: EMPTY_ARRAY,
-      pipes: EMPTY_MAP,
+      pipes: {},
       wrapDirectivesAndPipesInClosure: false,
     };
 
@@ -472,8 +472,11 @@ export class ComponentDecoratorHandler implements
       // Set up the R3TargetBinder, as well as a 'directives' array and a 'pipes' map that are later
       // fed to the TemplateDefinitionBuilder. First, a SelectorMatcher is constructed to match
       // directives that are in scope.
-      const matcher = new SelectorMatcher<DirectiveMeta&{selector: string}&{expression: Expression, meta: R3UsedDirectiveMetadata}>();
-      const directives: {selector: string, expression: Expression, meta: R3UsedDirectiveMetadata}[] = [];
+      const matcher =
+          new SelectorMatcher<DirectiveMeta&{selector: string}&
+                              {expression: Expression, meta: R3UsedDirectiveMetadata}>();
+      const directives:
+          {selector: string, expression: Expression, meta: R3UsedDirectiveMetadata}[] = [];
 
       for (const dir of scope.compilation.directives) {
         const {ref, selector} = dir;
@@ -481,8 +484,11 @@ export class ComponentDecoratorHandler implements
           const expression = this.refEmitter.emit(ref, context);
           directives.push({selector, expression, meta: dir});
 
-          // FIXME: The `...dir` and `meta: dir` os another indication that the types need to change :-)
-          matcher.addSelectables(CssSelector.parse(selector), {...(dir as DirectiveMeta & { selector: string }), expression, meta: dir});
+          // FIXME: The `...dir` and `meta: dir` os another indication that the types need to change
+          // :-)
+          matcher.addSelectables(
+              CssSelector.parse(selector),
+              {...(dir as DirectiveMeta & {selector: string}), expression, meta: dir});
         }
       }
       const pipes = new Map<string, Expression>();
@@ -531,7 +537,10 @@ export class ComponentDecoratorHandler implements
         // TODO(alxhub): switch TemplateDefinitionBuilder over to using R3TargetBinder directly.
         // FIXME: this might be problematic :-)
         data.directives = usedDirectives;
-        data.pipes = new Map(bound.getUsedPipes().map(name => [name, pipes.get(name)!]));
+        data.pipes = {};
+        for (const name of bound.getUsedPipes()) {
+          data.pipes[name] = pipes.get(name)!;
+        }
         data.wrapDirectivesAndPipesInClosure = wrapDirectivesAndPipesInClosure;
       } else {
         // Declaring the directiveDefs/pipeDefs arrays directly would require imports that would
@@ -597,12 +606,13 @@ export class ComponentDecoratorHandler implements
     ];
   }
 
-  private compilePrelink(node: ClassDeclaration, analysis: Readonly<ComponentAnalysisData>,
-                         resolution: Readonly<ComponentResolutionData>, pool: ConstantPool): CompileResult[] {
+  private compilePrelink(
+      node: ClassDeclaration, analysis: Readonly<ComponentAnalysisData>,
+      resolution: Readonly<ComponentResolutionData>, pool: ConstantPool): CompileResult[] {
     const meta: R3ComponentMetadata = {...analysis.meta, ...resolution};
     const res = compileDeclareComponentFromMetadata(meta, pool, makeBindingParser());
     const factoryRes = compileNgFactoryDefField(
-      {...meta, injectFn: Identifiers.directiveInject, target: R3FactoryTarget.Component});
+        {...meta, injectFn: Identifiers.directiveInject, target: R3FactoryTarget.Component});
     if (analysis.metadataStmt !== null) {
       factoryRes.statements.push(analysis.metadataStmt);
     }

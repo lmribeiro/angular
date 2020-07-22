@@ -124,21 +124,21 @@ export interface R3UsedDirectiveMetadata {
    *
    * Goes from property names to field names.
    */
-  inputs: { [property: string]: string | [string, string] };
+  inputs: {[property: string]: string|[string, string]};
 
   /**
    * Set of outputs which this directive claims.
    *
    * Goes from property names to field names.
    */
-  outputs: { [property: string]: string };
+  outputs: {[property: string]: string};
 
   /**
    * Name under which the directive is exported, if any (exportAs in Angular).
    *
    * Null otherwise
    */
-  exportAs: string[] | null;
+  exportAs: string[]|null;
 }
 
 /**
@@ -166,7 +166,7 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
    * A map of pipe names to an expression referencing the pipe type which are in the scope of the
    * compilation.
    */
-  pipes: Map<string, o.Expression>;
+  pipes: Record<string, o.Expression>;
 
   /**
    * A list of directive selectors and an expression referencing the directive type which are in the
@@ -259,21 +259,21 @@ export interface R3DeclareComponentMetadata {
 
   // Map of inputs, keyed by the name of the input field.
   // DONE
-  inputs: { [fieldName: string]: string | [string, string] };
+  inputs: {[fieldName: string]: string|[string, string]};
 
   // Map of outputs, keyed by the name of the output field.
   // DONE
-  outputs: { [fieldName: string]: string };
+  outputs: {[fieldName: string]: string};
 
   // Information about host bindings present on the component.
   // DONE
   host: {
     // DONE
-    attributes: { [key: string]: o.Expression };
+    attributes: {[key: string]: o.Expression};
     // DONE
-    listeners: { [key: string]: string };
+    listeners: {[key: string]: string};
     // DONE
-    properties: { [key: string]: string };
+    properties: {[key: string]: string};
   };
 
   // List of directives which matched in the template, including sufficient
@@ -305,31 +305,17 @@ export interface R3DeclareComponentMetadata {
 
   // Map of pipe names to an expression representing the pipe class.
   // DONE
-  pipes: { [pipeName: string]: o.Expression | (() => o.Expression) };
+  pipes: {[pipeName: string]: o.Expression|(() => o.Expression)};
 
-  // Map of queries from this component.
-  queries: {
-    [fieldName: string]: {
-      // Whether the query is a view query or content query.
-      type: 'view' | 'content';
+  /**
+   * Information about the content queries made by the directive.
+   */
+  queries: R3QueryMetadata[];
 
-      // First result or many results?
-      first: boolean;
-
-      // Predicate of the query, which can be either a DI token or
-      // a list of refs.
-      predicate: o.Expression | string[];
-
-      // Is this a deep query or not?
-      descendants: boolean;
-
-      // What to read from the injector of the matched node?
-      read: o.Expression | null;
-
-      // Whether the query resolves statically or updates over time?
-      static: boolean;
-    }
-  };
+  /**
+   * Information about the view queries made by the directive.
+   */
+  viewQueries: R3QueryMetadata[];
 
   // DONE (not in design doc)
   providers: o.Expression|null;
@@ -338,10 +324,10 @@ export interface R3DeclareComponentMetadata {
   viewProviders: o.Expression|null;
 
   // DONE (not in design doc)
-  exportAs: string[] | null;
+  exportAs: string[]|null;
 
   // DONE
-  animations: o.Expression | null;
+  animations: o.Expression|null;
 
   // Information about the specific settings of this component and the
   // way it is meant to be compiled.

@@ -175,15 +175,11 @@ export class CompilerFacadeImpl implements CompilerFacade {
     // Parse the template and check for errors.
     const template = parseTemplate(
         facade.template, sourceMapUrl,
-        {preserveWhitespaces: /*facade.preserveWhitespaces*/ false, interpolationConfig});
+        {preserveWhitespaces: /*TODO: facade.preserveWhitespaces*/ false, interpolationConfig});
     if (template.errors !== undefined) {
       const errors = template.errors.map(err => err.toString()).join(', ');
       throw new Error(
           `Errors during JIT compilation of template for ${facade.type.name}: ${errors}`);
-    }
-    const pipes = new Map();
-    for (const pipeName of Object.keys(facade.pipes)) {
-      pipes.set(pipeName, facade.pipes[pipeName]);
     }
 
     const metadata: R3ComponentMetadata = {
@@ -195,10 +191,10 @@ export class CompilerFacadeImpl implements CompilerFacade {
       host: {...facade.host, specialAttributes: {/* TODO */}},
       inputs: facade.inputs,
       outputs: facade.outputs,
-      queries: [/* TODO */],
-      viewQueries: [/* TODO */],
-      providers:
-          /* TODO facade.providers != null ? new WrappedNodeExpr(facade.providers) : null */ null,
+      queries: facade.queries,
+      viewQueries: facade.viewQueries,
+      providers: facade.providers,
+      viewProviders: facade.viewProviders,
       fullInheritance: false,
       selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(),
       template: {
@@ -212,12 +208,9 @@ export class CompilerFacadeImpl implements CompilerFacade {
       interpolation: interpolationConfig,
       changeDetection: facade.changeDetectionStrategy,
       animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null,
-      viewProviders: /* TODO facade.viewProviders != null ? new
-                        WrappedNodeExpr(facade.viewProviders) : null */
-          null,
       relativeContextFilePath: '',
       i18nUseExternalIds: true,
-      pipes,
+      pipes: facade.pipes,
       directives:
           facade.directives.map(d => ({...d, expression: new WrappedNodeExpr(d.type), meta: null})),
       exportAs: facade.exportAs,

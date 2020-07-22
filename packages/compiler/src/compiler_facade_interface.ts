@@ -155,7 +155,7 @@ export interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
   template: string;
   preserveWhitespaces: boolean;
   animations: any[]|undefined;
-  pipes: Map<string, any>;
+  pipes: Record<string, any>;
   directives: {selector: string, expression: any, meta: null}[];
   styles: string[];
   encapsulation: ViewEncapsulation;
@@ -215,6 +215,10 @@ export interface R3DeclareComponentMetadata {
   // Reference to the component class itself.
   type: OpaqueExpression;
 
+  providers: OpaqueExpression|null;
+
+  viewProviders: OpaqueExpression|null;
+
   // Map of inputs, keyed by the name of the input field.
   inputs: {[fieldName: string]: string|[string, string]};
 
@@ -252,29 +256,15 @@ export interface R3DeclareComponentMetadata {
   // a function to call that returns the class.
   pipes: {[pipeName: string]: OpaqueExpression|OpaqueExpressionFactory};
 
-  // Map of queries from this component.
-  queries: {
-    [fieldName: string]: {
-      // Whether the query is a view query or content query.
-      type: 'view'|'content';
+  /**
+   * Information about the content queries made by the directive.
+   */
+  queries: R3DeclarationQueryMetadata[];
 
-      // First result or many results?
-      first: boolean;
-
-      // Predicate of the query, which can be either a DI token or
-      // a list of refs.
-      predicate: OpaqueExpression | string[];
-
-      // Is this a deep query or not?
-      descendants: boolean;
-
-      // What to read from the injector of the matched node?
-      read: OpaqueExpression | null;
-
-      // Whether the query resolves statically or updates over time?
-      static: boolean;
-    }
-  };
+  /**
+   * Information about the view queries made by the directive.
+   */
+  viewQueries: R3DeclarationQueryMetadata[];
 
   exportAs: string[]|null;
 
@@ -298,3 +288,47 @@ export interface R3DeclareComponentMetadata {
 export type OpaqueExpression = any;
 export type OpaqueExpressionFactory = () => any;
 export type InterpolationConfig = [string, string];
+
+export interface R3DeclarationQueryMetadata {
+  /**
+   * Name of the property on the class to update with query results.
+   */
+  propertyName: string;
+
+  /**
+   * Whether to read only the first matching result, or an array of results.
+   */
+  first: boolean;
+
+  /**
+   * Either an expression representing a type or `InjectionToken` for the query
+   * predicate, or a set of string selectors.
+   */
+  predicate: OpaqueExpression|string[];
+
+  /**
+   * Whether to include only direct children or all descendants.
+   */
+  descendants: boolean;
+
+  /**
+   * An expression representing a type to read from each matched node, or null if the default value
+   * for a given node is to be returned.
+   */
+  read: OpaqueExpression|null;
+
+  /**
+   * Whether or not this query should collect only static results.
+   *
+   * If static is true, the query's results will be set on the component after nodes are created,
+   * but before change detection runs. This means that any results that relied upon change detection
+   * to run (e.g. results inside *ngIf or *ngFor views) will not be collected. Query results are
+   * available in the ngOnInit hook.
+   *
+   * If static is false, the query's results will be set on the component after change detection
+   * runs. This means that the query results can contain nodes inside *ngIf or *ngFor views, but
+   * the results will not be available in the ngOnInit hook (only in the ngAfterContentInit for
+   * content hooks and ngAfterViewInit for view hooks).
+   */
+  static: boolean;
+}

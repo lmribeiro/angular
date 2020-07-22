@@ -30,7 +30,7 @@ import {prepareSyntheticListenerFunctionName, prepareSyntheticPropertyName, type
 import {R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3HostMetadata, R3QueryMetadata} from './api';
 import {MIN_STYLING_BINDING_SLOTS_REQUIRED, StylingBuilder, StylingInstructionCall} from './styling_builder';
 import {BindingScope, makeBindingParser, prepareEventListenerParameters, renderFlagCheckIfStmt, resolveSanitizationFn, TemplateDefinitionBuilder, ValueConverter} from './template';
-import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator, mapToExpression} from './util';
+import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, mapToExpression, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator} from './util';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -303,17 +303,25 @@ export function compileDeclareComponentFromMetadata(
   definitionMap.set('providers', meta.providers);
   definitionMap.set('viewProviders', meta.viewProviders);
 
-  definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
+  definitionMap.set(
+      'exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
   definitionMap.set('animations', meta.animations);
 
   if (meta.changeDetection !== undefined) {
-    definitionMap.set('changeDetectionStrategy', o.importExpr(R3.ChangeDetectionStrategy).prop(core.ChangeDetectionStrategy[meta.changeDetection]));
+    definitionMap.set(
+        'changeDetectionStrategy',
+        o.importExpr(R3.ChangeDetectionStrategy)
+            .prop(core.ChangeDetectionStrategy[meta.changeDetection]));
   }
   if (meta.encapsulation !== undefined) {
-    definitionMap.set('encapsulation', o.importExpr(R3.ViewEncapsulation).prop(core.ViewEncapsulation[meta.encapsulation]));
+    definitionMap.set(
+        'encapsulation',
+        o.importExpr(R3.ViewEncapsulation).prop(core.ViewEncapsulation[meta.encapsulation]));
   }
 
-  definitionMap.set('interpolation', o.literalArr([o.literal(meta.interpolation.start), o.literal(meta.interpolation.end)]));
+  definitionMap.set(
+      'interpolation',
+      o.literalArr([o.literal(meta.interpolation.start), o.literal(meta.interpolation.end)]));
 
   definitionMap.set('usesInheritance', o.literal(meta.usesInheritance));
   definitionMap.set('fullInheritance', o.literal(meta.fullInheritance));
@@ -385,7 +393,8 @@ export function compileComponentFromRender2(
   const meta: R3ComponentMetadata = {
     ...directiveMetadataFromGlobalMetadata(component, outputCtx, reflector),
     selector: component.selector,
-    template: {template: '', nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors},
+    template:
+        {template: '', nodes: render3Ast.nodes, ngContentSelectors: render3Ast.ngContentSelectors},
     directives: [],
     pipes: typeMapToExpressionMap(pipeTypeByName, outputCtx),
     viewQueries: queriesFromGlobalMetadata(component.viewQueries, outputCtx),
@@ -419,9 +428,9 @@ export function compileComponentFromRender2(
 
 function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArrayExpr {
   // TODO: this could be determined per directive instead of globally
-  const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure
-    ? expr => o.fn([], [new o.ReturnStatement(expr)])
-    : expr => expr;
+  const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure ?
+      expr => o.fn([], [new o.ReturnStatement(expr)]) :
+      expr => expr;
 
   return o.literalArr(meta.directives.map(directive => {
     const dir = directive.meta;
@@ -441,14 +450,16 @@ function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArray
 
 function compileUsedPipeMetadata(meta: R3ComponentMetadata): o.LiteralMapExpr {
   // TODO: this could be determined per directive instead of globally
-  const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure
-    ? expr => o.fn([], [new o.ReturnStatement(expr)])
-    : expr => expr;
+  const wrapType: (expr: o.Expression) => o.Expression = meta.wrapDirectivesAndPipesInClosure ?
+      expr => o.fn([], [new o.ReturnStatement(expr)]) :
+      expr => expr;
 
   // TODO: propose change to follow same structure as directives
-  return o.literalMap(Array.from(meta.pipes.entries()).map(([name, pipe]) => {
-    return {key: name, value: wrapType(pipe), quoted: true};
-  }));
+  const entries = [];
+  for (const key in meta.pipes) {
+    entries.push({key, value: wrapType(meta.pipes[key]), quoted: true});
+  }
+  return o.literalMap(entries);
 }
 
 function compileHostMetadata(meta: R3HostMetadata): o.LiteralMapExpr {
@@ -919,11 +930,13 @@ function metadataAsSummary(meta: R3HostMetadata): CompileDirectiveSummary {
 
 
 function typeMapToExpressionMap(
-    map: Map<string, StaticSymbol>, outputCtx: OutputContext): Map<string, o.Expression> {
+    map: Map<string, StaticSymbol>, outputCtx: OutputContext): Record<string, o.Expression> {
   // Convert each map entry into another entry where the value is an expression importing the type.
-  const entries = Array.from(map).map(
-      ([key, type]): [string, o.Expression] => [key, outputCtx.importExpr(type)]);
-  return new Map(entries);
+  const expressionMap: Record<string, o.Expression> = {};
+  for (const [key, type] of map) {
+    expressionMap[key] = outputCtx.importExpr(type);
+  }
+  return expressionMap;
 }
 
 const HOST_REG_EXP = /^(?:\[([^\]]+)\])|(?:\(([^\)]+)\))$/;
