@@ -15,7 +15,7 @@ import {PartialEvaluator} from '../../partial_evaluator';
 import {isNamedClassDeclaration, TypeScriptReflectionHost} from '../../reflection';
 import {LocalModuleScopeRegistry, MetadataDtsModuleScopeResolver} from '../../scope';
 import {getDeclaration, makeProgram} from '../../testing';
-import {ResourceLoader} from '../src/api';
+import {CompilationModel, ResourceLoader} from '../src/api';
 import {ComponentDecoratorHandler} from '../src/component';
 
 export class NoopResourceLoader implements ResourceLoader {
@@ -74,7 +74,7 @@ runInEachFileSystem(() => {
           /* enableI18nLegacyMessageIdFormat */ false,
           /* i18nNormalizeLineEndingsInICUs */ undefined, moduleResolver, cycleAnalyzer, refEmitter,
           NOOP_DEFAULT_IMPORT_RECORDER, /* depTracker */ null, injectableRegistry,
-          /* annotateForClosureCompiler */ false);
+          /* annotateForClosureCompiler */ false, CompilationModel.Aot);
       const TestCmp = getDeclaration(program, _('/entry.ts'), 'TestCmp', isNamedClassDeclaration);
       const detected = handler.detect(TestCmp, reflectionHost.getDecoratorsOfDeclaration(TestCmp));
       if (detected === undefined) {

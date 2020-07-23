@@ -183,7 +183,7 @@ export class CompilerFacadeImpl implements CompilerFacade {
     }
 
     const metadata: R3ComponentMetadata = {
-      typeSourceSpan: null!,
+      typeSourceSpan: this.createParseSourceSpan('Component', facade.type.name, sourceMapUrl),
       type: wrapReference(facade.type),
       typeArgumentCount: 0,
       internalType: new WrappedNodeExpr(facade.type),
@@ -193,8 +193,8 @@ export class CompilerFacadeImpl implements CompilerFacade {
       outputs: facade.outputs,
       queries: facade.queries,
       viewQueries: facade.viewQueries,
-      providers: facade.providers,
-      viewProviders: facade.viewProviders,
+      providers: new WrappedNodeExpr(facade.providers),
+      viewProviders: new WrappedNodeExpr(facade.viewProviders),
       fullInheritance: false,
       selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(),
       template: {
@@ -210,7 +210,7 @@ export class CompilerFacadeImpl implements CompilerFacade {
       animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null,
       relativeContextFilePath: '',
       i18nUseExternalIds: true,
-      pipes: facade.pipes,
+      pipes: wrapMapObj(facade.pipes),
       directives:
           facade.directives.map(d => ({...d, expression: new WrappedNodeExpr(d.type), meta: null})),
       exportAs: facade.exportAs,
@@ -432,4 +432,13 @@ function parseInputOutputs(values: string[]): StringMap {
 export function publishFacade(global: any) {
   const ng: ExportedCompilerFacade = global.ng || (global.ng = {});
   ng.ɵcompilerFacade = new CompilerFacadeImpl();
+}
+
+
+function wrapMapObj(obj: any): Record<string, WrappedNodeExpr<any>> {
+  const wrapped: Record<string, WrappedNodeExpr<any>> = {};
+  for (const key in obj) {
+    wrapped[key] = new WrappedNodeExpr(obj[key]);
+  }
+  return wrapped;
 }

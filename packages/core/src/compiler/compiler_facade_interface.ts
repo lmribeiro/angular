@@ -215,6 +215,10 @@ export interface R3DeclareComponentMetadata {
   // Reference to the component class itself.
   type: OpaqueExpression;
 
+  providers: OpaqueExpression|null;
+
+  viewProviders: OpaqueExpression|null;
+
   // Map of inputs, keyed by the name of the input field.
   inputs: {[fieldName: string]: string|[string, string]};
 
@@ -245,7 +249,7 @@ export interface R3DeclareComponentMetadata {
     outputs: string[];
 
     // Names by which this directive exports itself for references.
-    exportAs: string[];
+    exportAs: string[] | null;
   }[];
 
   // Map of pipe names to an expression representing the pipe class or

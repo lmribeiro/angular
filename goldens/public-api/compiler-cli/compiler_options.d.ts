@@ -20,6 +20,7 @@ export interface LegacyNgcOptions {
 }
 
 export interface MiscOptions {
+    compilationModel?: 'aot' | 'prelink';
     compileNonExportedClasses?: boolean;
     disableTypeScriptVersionCheck?: boolean;
 }

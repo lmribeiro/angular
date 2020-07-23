@@ -271,6 +271,9 @@ export {
   transitiveScopesFor as ɵtransitiveScopesFor,
 } from './render3/jit/module';
 export {
+  $ngDeclareComponent
+} from './render3/jit/partial';
+export {
   compilePipe as ɵcompilePipe,
 } from './render3/jit/pipe';
 export {

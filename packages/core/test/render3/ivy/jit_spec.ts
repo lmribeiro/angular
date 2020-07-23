@@ -7,6 +7,7 @@
  */
 import 'reflect-metadata';
 
+import * as ng from '@angular/core';
 import {ElementRef, QueryList, ɵɵsetComponentScope as setComponentScope} from '@angular/core';
 import {Injectable} from '@angular/core/src/di/injectable';
 import {setCurrentInjector, ɵɵinject} from '@angular/core/src/di/injector_compatibility';
@@ -26,6 +27,80 @@ ivyEnabled && describe('render3 jit', () => {
 
   afterAll(() => {
     setCurrentInjector(injector);
+  });
+
+  it('compiles a pre-linked component', () => {
+    debugger;
+    class ChildComponent {}
+    class SomeDirective {}
+    class MultiplyPipe implements ng.PipeTransform {
+      transform(n: number): number {
+        return n * 2;
+      }
+    }
+    class MyComponent {
+      static ɵcmp = ng.$ngDeclareComponent<MyComponent>({
+        version: 1,
+        template: '<child some-directive>{{ 1 | multiply:2 }}</child>!',
+        styles: [],
+        type: MyComponent,
+        selector: 'my-component',
+        inputs: {input: 'input', aliasedIn: ['in', 'aliasedIn']},
+        outputs: {output: 'output', aliasedOut: 'out'},
+        host: {
+          attributes: {},
+          listeners: {'click': 'handleClick($event)', 'mouseover': 'hostListener($event.target)'},
+          properties: {'a': 'foo.bar', 'hostExpr': 'hostExpr'}
+        },
+        directives:
+            [
+              {
+                selector: 'child',
+                type:
+                    function() {
+                      return ChildComponent;
+                    },
+                inputs: ['input'],
+                outputs: ['output'],
+                exportAs: ['child1', 'child2']
+              },
+              {
+                selector: '[some-directive]',
+                type:
+                    function() {
+                      return SomeDirective;
+                    },
+                inputs: [],
+                outputs: [],
+                exportAs: null
+              }
+            ],
+        pipes: {
+          'multiply':
+              function() {
+                return MultiplyPipe;
+              }
+        },
+        providers: [{provide: 'a', useValue: 'A'}],
+        viewProviders: [{provide: 'b', useValue: 'B'}],
+        exportAs: null,
+        encapsulation: ng.ViewEncapsulation.Emulated,
+        interpolation: ['{{', '}}'],
+        usesInheritance: false,
+        fullInheritance: false,
+        usesOnChanges: false,
+        ngImport: ng,
+        queries: [],
+        viewQueries: [],
+        animations: [],
+        changeDetectionStrategy: ng.ChangeDetectionStrategy.Default,
+        i18nUseExternalIds: false,
+      });
+    }
+
+    const def = MyComponent.ɵcmp;
+    console.log(def);
+    expect(def.template).toEqual(jasmine.any(Function));
   });
 
   it('compiles a component', () => {
