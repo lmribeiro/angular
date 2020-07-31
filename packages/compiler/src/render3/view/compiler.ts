@@ -30,7 +30,7 @@ import {prepareSyntheticListenerFunctionName, prepareSyntheticPropertyName, type
 import {R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3HostMetadata, R3QueryMetadata} from './api';
 import {MIN_STYLING_BINDING_SLOTS_REQUIRED, StylingBuilder, StylingInstructionCall} from './styling_builder';
 import {BindingScope, makeBindingParser, prepareEventListenerParameters, renderFlagCheckIfStmt, resolveSanitizationFn, TemplateDefinitionBuilder, ValueConverter} from './template';
-import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, mapToExpression, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator} from './util';
+import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, mapToExpression, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator, listPublicNames} from './util';
 
 const EMPTY_ARRAY: any[] = [];
 
@@ -441,8 +441,8 @@ function compileUsedDirectiveMetadata(meta: R3ComponentMetadata): o.LiteralArray
     const dirMeta = new DefinitionMap();
     dirMeta.set('selector', o.literal(directive.selector));
     dirMeta.set('type', wrapType(directive.expression));
-    dirMeta.set('inputs', mapToExpression(dir.inputs, true));
-    dirMeta.set('outputs', mapToExpression(dir.outputs));
+    dirMeta.set('inputs', listPublicNames(dir.inputs));
+    dirMeta.set('outputs', listPublicNames(dir.outputs));
     dirMeta.set('exportAs', asLiteral(dir.exportAs));
     return dirMeta.toLiteralMap();
   }));

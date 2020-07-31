@@ -155,21 +155,15 @@ fdescribe('compiler linker compliance', () => {
             {
               selector: "child",
               type: function () { return ChildComponent; },
-              inputs: {
-                input: "input",
-                aliasedIn: ["in", "aliasedIn"]
-              },
-              outputs: {
-                output: "output",
-                aliasedOut: "out"
-              },
+              inputs: ["input", "in"],
+              outputs: ["output", "out"],
               exportAs: ["child1", "child2"]
             },
             {
               selector: "[some-directive]",
               type: function () { return SomeDirective; },
-              inputs: {},
-              outputs: {},
+              inputs: [],
+              outputs: [],
               exportAs: null
             }
           ],
