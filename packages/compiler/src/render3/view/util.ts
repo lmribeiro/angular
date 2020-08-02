@@ -117,8 +117,7 @@ export function mapToExpression(
   }));
 }
 
-export function listPublicNames(
-    map: {[key: string]: string|string[]}): o.Expression {
+export function listPublicNames(map: {[key: string]: string|string[]}): o.Expression {
   return o.literalArr(Object.getOwnPropertyNames(map).map(key => {
     // canonical syntax: `dirProp: publicProp`
     // if there is no `:`, use dirProp = elProp

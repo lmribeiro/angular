@@ -12,19 +12,16 @@ import {NodeJSFileSystem, setFileSystem} from '../../src/ngtsc/file_system';
 
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const options =
-      yargs
-          .option('s', {
-            alias: 'source',
-            required: true,
-            describe: '',
-          })
-          .strict()
-          .help()
-          .parse(args);
+  const options = yargs
+                      .option('s', {
+                        alias: 'source',
+                        required: true,
+                        describe: '',
+                      })
+                      .strict()
+                      .help()
+                      .parse(args);
 
   const fs = new NodeJSFileSystem();
   setFileSystem(fs);
-
-
 }

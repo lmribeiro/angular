@@ -195,7 +195,7 @@ export class CompilerFacadeImpl implements CompilerFacade {
       viewQueries: facade.viewQueries,
       providers: new WrappedNodeExpr(facade.providers),
       viewProviders: new WrappedNodeExpr(facade.viewProviders),
-      fullInheritance: false,
+      fullInheritance: facade.fullInheritance,
       selector: facade.selector || this.elementSchemaRegistry.getDefaultComponentElementName(),
       template: {
         template: facade.template,

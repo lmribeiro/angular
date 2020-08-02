@@ -8,11 +8,13 @@
 
 import {AttributeMarker} from '@angular/compiler/src/core';
 import {arrayToMockDir, MockCompilerHost, MockData, MockDirectory, setup, toMockFileArray} from '@angular/compiler/test/aot/test_util';
-import {expectEmit} from './mock_compile';
+import * as ts from 'typescript';
+
 import {AotCompilerOptions} from '../../../compiler';
 import {NodeJSFileSystem, setFileSystem} from '../../src/ngtsc/file_system';
 import {NgtscProgram} from '../../src/ngtsc/program';
-import * as ts from 'typescript';
+
+import {expectEmit} from './mock_compile';
 
 
 /**
@@ -110,7 +112,7 @@ fdescribe('compiler linker compliance', () => {
 `;
 
     const ChildComponentFactory =
-      `ChildComponent.ɵfac = function ChildComponent_Factory(t) { return ɵChildComponent_BaseFactory(t || ChildComponent); };`;
+        `ChildComponent.ɵfac = function ChildComponent_Factory(t) { return ɵChildComponent_BaseFactory(t || ChildComponent); };`;
 
     // SomeDirective definition should be:
     const SomeDirectiveDefinition = `
@@ -121,7 +123,7 @@ fdescribe('compiler linker compliance', () => {
       `;
 
     const SomeDirectiveFactory =
-      `SomeDirective.ɵfac = function SomeDirective_Factory(t) {return new (t || SomeDirective)(); };`;
+        `SomeDirective.ɵfac = function SomeDirective_Factory(t) {return new (t || SomeDirective)(); };`;
 
     // MyComponent definition should be:
     const MyComponentDefinition = `
@@ -183,7 +185,7 @@ fdescribe('compiler linker compliance', () => {
       `;
 
     const MyComponentFactory =
-      `MyComponent.ɵfac = function MyComponent_Factory(t) { return new (t || MyComponent)(); };`;
+        `MyComponent.ɵfac = function MyComponent_Factory(t) { return new (t || MyComponent)(); };`;
 
     const result = prelink(files, angularFiles);
     const source = result.source;
@@ -937,16 +939,15 @@ fdescribe('compiler linker compliance', () => {
       const result = prelink(files, angularFiles);
       expectEmit(result.source, expectedOutput, 'Invalid directive definition');
     });
-
   });
 });
 
 
 export function prelink(
-  data: MockDirectory, angularFiles: MockData, options: AotCompilerOptions = {},
-  errorCollector: (error: any, fileName?: string) => void = error => {
-    throw error;
-  }): {
+    data: MockDirectory, angularFiles: MockData, options: AotCompilerOptions = {},
+    errorCollector: (error: any, fileName?: string) => void = error => {
+      throw error;
+    }): {
   source: string,
 } {
   setFileSystem(new NodeJSFileSystem());
@@ -957,18 +958,18 @@ export function prelink(
   const mockCompilerHost = new MockCompilerHost(scripts, files);
 
   const program = new NgtscProgram(
-    scripts, {
-      target: ts.ScriptTarget.ES2015,
-      module: ts.ModuleKind.ES2015,
-      moduleResolution: ts.ModuleResolutionKind.NodeJs,
-      enableI18nLegacyMessageIdFormat: false,
-      compilationModel: 'prelink',
-      ...options,
-    },
-    mockCompilerHost);
+      scripts, {
+        target: ts.ScriptTarget.ES2015,
+        module: ts.ModuleKind.ES2015,
+        moduleResolution: ts.ModuleResolutionKind.NodeJs,
+        enableI18nLegacyMessageIdFormat: false,
+        compilationModel: 'prelink',
+        ...options,
+      },
+      mockCompilerHost);
   program.emit();
   const source =
-    scripts.map(script => mockCompilerHost.readFile(script.replace(/\.ts$/, '.js'))).join('\n');
+      scripts.map(script => mockCompilerHost.readFile(script.replace(/\.ts$/, '.js'))).join('\n');
 
   return {source};
 }

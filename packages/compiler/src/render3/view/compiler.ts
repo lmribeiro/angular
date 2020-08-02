@@ -30,7 +30,7 @@ import {prepareSyntheticListenerFunctionName, prepareSyntheticPropertyName, type
 import {R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3HostMetadata, R3QueryMetadata} from './api';
 import {MIN_STYLING_BINDING_SLOTS_REQUIRED, StylingBuilder, StylingInstructionCall} from './styling_builder';
 import {BindingScope, makeBindingParser, prepareEventListenerParameters, renderFlagCheckIfStmt, resolveSanitizationFn, TemplateDefinitionBuilder, ValueConverter} from './template';
-import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, mapToExpression, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator, listPublicNames} from './util';
+import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, listPublicNames, mapToExpression, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator} from './util';
 
 const EMPTY_ARRAY: any[] = [];
 
