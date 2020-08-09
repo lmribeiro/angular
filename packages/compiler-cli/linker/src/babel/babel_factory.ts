@@ -49,8 +49,8 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
     return t.parenthesizedExpression(expression);
   }
 
-  createElementAccess(expression: t.Expression, elementName: string): t.Expression {
-    return t.memberExpression(expression, t.stringLiteral(elementName), /* computed */ true);
+  createElementAccess(expression: t.Expression, element: t.Expression): t.Expression {
+    return t.memberExpression(expression, element, /* computed */ true);
   }
 
   createExpressionStatement(expression: t.Expression): t.Statement {
@@ -137,9 +137,10 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
     return t.unaryExpression(operator as any, operand);
   }
 
-  createVariableDeclaration(variableName: string, initializer: t.Expression|null): t.Statement {
+  createVariableDeclaration(variableName: string, initializer: t.Expression|null, final: boolean):
+      t.Statement {
     return t.variableDeclaration(
-        'var', [t.variableDeclarator(t.identifier(variableName), initializer)]);
+        final ? 'const' : 'var', [t.variableDeclarator(t.identifier(variableName), initializer)]);
   }
 
   setSourceMapRange(node: t.Statement|t.Expression, sourceMapRange: SourceMapRange): void {

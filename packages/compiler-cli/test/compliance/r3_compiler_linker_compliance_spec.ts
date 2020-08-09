@@ -21,7 +21,7 @@ import {expectEmit} from './mock_compile';
  * These tests are codified version of the tests in compiler_canonical_spec.ts. Every
  * test in compiler_canonical_spec.ts should have a corresponding test here.
  */
-fdescribe('compiler linker compliance', () => {
+describe('compiler linker compliance', () => {
   const angularFiles = setup({
     compileAngular: false,
     compileAnimations: false,
@@ -215,7 +215,6 @@ fdescribe('compiler linker compliance', () => {
               static: false
             }
           ],
-          exportAs: null,
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],
           usesInheritance: false,

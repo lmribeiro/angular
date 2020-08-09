@@ -40,6 +40,9 @@ export class FileLinker<TStatement, TExpression> {
   constructor(
       private sourceUrl: string, private env: LinkerEnvironment<TStatement, TExpression>,
       private options: LinkerOptions) {
+    if (!this.sourceUrl) {
+      throw new Error('sourceUrl is required');
+    }
     this.globalConstantPool = options.enableGlobalStatements ? new ConstantPool() : null;
   }
 
@@ -144,8 +147,8 @@ export class FileLinker<TStatement, TExpression> {
       queries: metaObj.getArray('queries').map(entry => this.toQueryMetadata(entry.getObject())),
       viewQueries:
           metaObj.getArray('viewQueries').map(entry => this.toQueryMetadata(entry.getObject())),
-      providers: metaObj.getOpaque('providers'),
-      viewProviders: metaObj.getOpaque('viewProviders'),
+      providers: metaObj.has('providers') ? metaObj.getOpaque('providers') : null,
+      viewProviders: metaObj.has('viewProviders') ? metaObj.getOpaque('viewProviders') : null,
       fullInheritance: metaObj.getBoolean('fullInheritance'),
       selector: metaObj.getString('selector'),
       template: {
@@ -155,15 +158,21 @@ export class FileLinker<TStatement, TExpression> {
       },
       wrapDirectivesAndPipesInClosure,
       styles: metaObj.getArray('styles').map(entry => entry.getString()),
-      encapsulation: this.parseEncapsulation(metaObj.getNode('encapsulation')),
+      encapsulation: metaObj.has('encapsulation') ?
+          this.parseEncapsulation(metaObj.getNode('encapsulation')) :
+          ViewEncapsulation.Emulated,
       interpolation,
-      changeDetection: this.parseChangeDetectionStrategy(metaObj.getNode('changeDetection')),
-      animations: metaObj.getOpaque('animations'),
+      changeDetection: metaObj.has('changeDetection') ?
+          this.parseChangeDetectionStrategy(metaObj.getNode('changeDetection')) :
+          ChangeDetectionStrategy.Default,
+      animations: metaObj.has('animations') ? metaObj.getOpaque('animations') : null,
       relativeContextFilePath: this.sourceUrl,
       i18nUseExternalIds: true,
       pipes,
       directives,
-      exportAs: metaObj.getArray('exportAs').map(entry => entry.getString()),
+      exportAs: metaObj.has('exportAs') ?
+          metaObj.getArray('exportAs').map(entry => entry.getString()) :
+          null,
       lifecycle: {usesOnChanges: metaObj.getBoolean('usesOnChanges')},
       name: typeName,
       usesInheritance: metaObj.getBoolean('usesInheritance'),

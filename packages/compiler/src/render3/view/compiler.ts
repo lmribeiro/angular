@@ -306,8 +306,7 @@ export function compileDeclareComponentFromMetadata(
   definitionMap.set('queries', o.literalArr(meta.queries.map(compileQuery)));
   definitionMap.set('viewQueries', o.literalArr(meta.viewQueries.map(compileQuery)));
 
-  definitionMap.set(
-      'exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
+  definitionMap.set('exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : null);
   definitionMap.set('animations', meta.animations);
 
   if (meta.changeDetection !== undefined) {
@@ -459,8 +458,11 @@ function compileUsedPipeMetadata(meta: R3ComponentMetadata): o.LiteralMapExpr {
 
   // TODO: propose change to follow same structure as directives
   const entries = [];
-  for (const key in meta.pipes) {
-    entries.push({key, value: wrapType(meta.pipes[key]), quoted: true});
+  for (const key of Object.keys(meta.pipes)) {
+    const pipe = meta.pipes[key];
+    if (pipe) {
+      entries.push({key, value: wrapType(pipe), quoted: true});
+    }
   }
   return o.literalMap(entries);
 }

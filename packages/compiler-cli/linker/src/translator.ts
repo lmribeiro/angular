@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {AssertNotNull, BinaryOperator, BinaryOperatorExpr, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionVisitor, ExternalExpr, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, Statement, StatementVisitor, ThrowStmt, TryCatchStmt, TypeofExpr, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr} from '../../../compiler';
+import {AssertNotNull, BinaryOperator, BinaryOperatorExpr, CastExpr, ClassStmt, CommaExpr, CommentStmt, ConditionalExpr, DeclareFunctionStmt, DeclareVarStmt, Expression, ExpressionStatement, ExpressionVisitor, ExternalExpr, FunctionExpr, IfStmt, InstantiateExpr, InvokeFunctionExpr, InvokeMethodExpr, JSDocCommentStmt, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, NotExpr, ReadKeyExpr, ReadPropExpr, ReadVarExpr, ReturnStatement, Statement, StatementVisitor, StmtModifier, ThrowStmt, TryCatchStmt, TypeofExpr, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr} from '../../../compiler';
 import {LocalizedString} from '../../../compiler/src/output/output_ast';
 import {AstFactory, ObjectLiteralProperty} from '../../src/ngtsc/translator';
 
@@ -62,7 +62,8 @@ class ExpressionTranslatorVisitor<TStatement, TExpression> implements Expression
 
   visitDeclareVarStmt(stmt: DeclareVarStmt, context: Context): TStatement {
     return this.factory.createVariableDeclaration(
-        stmt.name, stmt.value && stmt.value.visitExpression(this, context.withExpressionMode));
+        stmt.name, stmt.value && stmt.value.visitExpression(this, context.withExpressionMode),
+        stmt.hasModifier(StmtModifier.Final));
   }
 
   visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: Context): TStatement {

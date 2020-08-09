@@ -32,7 +32,7 @@ export interface AstFactory<TStatement, TExpression> {
 
   createPropertyAccess(expression: TExpression, propertyName: string): TExpression;
 
-  createElementAccess(expression: TExpression, elementName: string): TExpression;
+  createElementAccess(expression: TExpression, element: TExpression): TExpression;
 
   createAssignment(target: TExpression, value: TExpression): TExpression;
 
@@ -59,7 +59,8 @@ export interface AstFactory<TStatement, TExpression> {
 
   createObjectLiteral(properties: ObjectLiteralProperty<TExpression>[]): TExpression;
 
-  createVariableDeclaration(variableName: string, initializer: TExpression|null): TStatement;
+  createVariableDeclaration(variableName: string, initializer: TExpression|null, final: boolean):
+      TStatement;
 
   createFunctionExpression(functionName: string|null, parameters: string[], body: TStatement):
       TExpression;

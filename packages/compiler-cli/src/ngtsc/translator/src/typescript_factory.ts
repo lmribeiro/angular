@@ -76,7 +76,7 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
     return ts.createConditional(condition, thenExpression, elseExpression);
   }
 
-  createElementAccess(expression: ts.Expression, elementName: string): ts.Expression {
+  createElementAccess(expression: ts.Expression, element: ts.Expression): ts.Expression {
     return ts.createElementAccess(expression, expression);
   }
 
@@ -161,12 +161,16 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
     return ts.createPrefix(ts.SyntaxKind.ExclamationToken, operand);
   }
 
-  createVariableDeclaration(variableName: string, initializer: ts.Expression|null): ts.Statement {
+  createVariableDeclaration(variableName: string, initializer: ts.Expression|null, final: boolean):
+      ts.Statement {
+    const nodeFlags = ((this.scriptTarget >= ts.ScriptTarget.ES2015) && final) ?
+        ts.NodeFlags.Const :
+        ts.NodeFlags.None;
     return ts.createVariableStatement(
         undefined,
         ts.createVariableDeclarationList(
             [ts.createVariableDeclaration(variableName, undefined, initializer ?? undefined)],
-            undefined),
+            nodeFlags),
     );
   }
 

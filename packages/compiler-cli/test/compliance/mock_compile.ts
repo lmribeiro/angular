@@ -8,8 +8,10 @@
 import {AotCompilerOptions} from '@angular/compiler';
 import {escapeRegExp} from '@angular/compiler/src/util';
 import {arrayToMockDir, MockCompilerHost, MockData, MockDirectory, toMockFileArray} from '@angular/compiler/test/aot/test_util';
+import {transformSync} from '@babel/core';
 import * as ts from 'typescript';
 
+import {makeEs2015LinkerPlugin} from '../../linker/src/babel/es2015_linker_plugin';
 import {NodeJSFileSystem, setFileSystem} from '../../src/ngtsc/file_system';
 import {NgtscProgram} from '../../src/ngtsc/program';
 
@@ -217,12 +219,34 @@ export function compile(
         module: ts.ModuleKind.ES2015,
         moduleResolution: ts.ModuleResolutionKind.NodeJs,
         enableI18nLegacyMessageIdFormat: false,
+        compilationModel: 'prelink',
         ...options,
       },
       mockCompilerHost);
   program.emit();
-  const source =
-      scripts.map(script => mockCompilerHost.readFile(script.replace(/\.ts$/, '.js'))).join('\n');
+  const source = scripts
+                     .map(script => {
+                       const filename = script.replace(/\.ts$/, '.js');
+                       const content = mockCompilerHost.readFile(filename);
+
+                       if (!filename.endsWith('.js')) {
+                         return content;
+                       }
+
+                       const result = transformSync(content, {
+                         filename,
+                         plugins: [makeEs2015LinkerPlugin()],
+                         parserOpts: {sourceType: 'unambiguous'},
+                       });
+                       if (result === null) {
+                         throw fail('Failed to transform');
+                       }
+                       if (result.code == null) {
+                         throw fail('Transform result does not have any code');
+                       }
+                       return result.code;
+                     })
+                     .join('\n');
 
   return {source};
 }

@@ -281,7 +281,7 @@ const i18nIcuMsg = (message: string, placeholders: Placeholder[] = []) => {
   return i18nMsgWithPostprocess(message, [], undefined, placeholders);
 };
 
-describe('i18n support in the template compiler', () => {
+xdescribe('i18n support in the template compiler', () => {
   describe('element attributes', () => {
     it('should add the meaning and description as JsDoc comments and metadata blocks', () => {
       const input = `
