@@ -15,26 +15,36 @@ export class BabelAstHost implements AstHost<t.Expression> {
     return extractRightMostName(node);
   }
 
+  isStringLiteral = t.isStringLiteral;
+
   parseStringLiteral(node: t.Expression): string {
     assert(node, t.isStringLiteral, 'a string literal');
     return node.value;
   }
+
+  isNumberLiteral = t.isNumberLiteral;
 
   parseNumberLiteral(node: t.Expression): number {
     assert(node, t.isNumericLiteral, 'a number literal');
     return node.value;
   }
 
+  isBooleanLiteral = t.isBooleanLiteral;
+
   parseBooleanLiteral(node: t.Expression): boolean {
     assert(node, t.isBooleanLiteral, 'a boolean literal');
     return node.value;
   }
+
+  isArrayLiteral = t.isArrayExpression;
 
   parseArrayLiteral(node: t.Expression): t.Expression[] {
     assert(node, t.isArrayExpression, 'an array literal');
     return node.elements.filter(
         (element): element is t.Expression => element !== null && t.isExpression(element));
   }
+
+  isObjectLiteral = t.isObjectExpression;
 
   parseObjectLiteral(node: t.Expression): Map<string, t.Expression> {
     assert(node, t.isObjectExpression, 'an object literal');
@@ -56,5 +66,22 @@ export class BabelAstHost implements AstHost<t.Expression> {
       result.set(key, property.value);
     }
     return result;
+  }
+
+  isFunction = t.isFunction;
+
+  unwrapFunction(node: t.Expression): t.Expression {
+    assert(node, t.isFunction, 'a function');
+    assert(node.body, t.isBlock, 'a function');
+    if (node.body.body.length !== 1) {
+      throw new FatalLinkerError(node.body, 'Unsupported syntax, expected exactly one statement');
+    }
+    const stmt = node.body.body[0];
+    assert(stmt, t.isReturnStatement, 'a return statement');
+    if (stmt.argument === null) {
+      throw new FatalLinkerError(stmt, 'Unsupported syntax, expected to have a return value');
+    }
+
+    return stmt.argument;
   }
 }

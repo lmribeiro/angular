@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {compileComponentFromMetadata, ConstantPool, InterpolationConfig, makeBindingParser, ParseLocation, ParseSourceFile, ParseSourceSpan, parseTemplate, R3ComponentMetadata, R3QueryMetadata, R3Reference, WrappedNodeExpr} from '@angular/compiler';
+import {compileComponentFromMetadata, ConstantPool, InterpolationConfig, makeBindingParser, ParseLocation, ParseSourceFile, ParseSourceSpan, parseTemplate, R3ComponentMetadata, R3QueryMetadata, R3Reference} from '@angular/compiler';
+import * as o from '@angular/compiler/src/output/output_ast';
 
 import {ChangeDetectionStrategy, ViewEncapsulation} from '../../../compiler/src/core';
 import {AstFactory} from '../../src/ngtsc/translator';
@@ -85,6 +86,39 @@ export class FileLinker<TStatement, TExpression> {
           metaObj.getNode('template'), `Errors found in the template of ${typeName}: ${errors}`);
     }
 
+    let wrapDirectivesAndPipesInClosure = false;
+
+    const directives: R3ComponentMetadata['directives'] =
+        metaObj.getArray('directives').map(directive => {
+          const directiveExpr = directive.getObject();
+          const type = directiveExpr.getValue('type');
+          const selector = directiveExpr.getString('selector');
+
+          if (type.isFunction()) {
+            wrapDirectivesAndPipesInClosure = true;
+            return {
+              selector: selector,
+              expression: new o.WrappedNodeExpr(type.unwrapFunction()),
+              meta: null,
+            };
+          } else {
+            return {
+              selector: selector,
+              expression: type.getOpaque(),
+              meta: null,
+            };
+          }
+        });
+
+    const pipes = metaObj.getObject('pipes').toLiteral(value => {
+      if (value.isFunction()) {
+        wrapDirectivesAndPipesInClosure = true;
+        return new o.WrappedNodeExpr(value.unwrapFunction());
+      } else {
+        return value.getOpaque();
+      }
+    });
+
     const host = metaObj.getObject('host');
 
     const meta: R3ComponentMetadata = {
@@ -99,8 +133,13 @@ export class FileLinker<TStatement, TExpression> {
         properties: host.getObject('properties').toLiteral(value => value.getString()),
         specialAttributes: {/* TODO */}
       },
-      inputs: metaObj.getObject('inputs').toLiteral(
-          value => value.getString()),  // FIXME(joost): this does not account for the two forms
+      inputs: metaObj.getObject('inputs').toLiteral(value => {
+        if (value.isString()) {
+          return value.getString();
+        } else {
+          return value.getArray().map(innerValue => innerValue.getString()) as [string, string];
+        }
+      }),
       outputs: metaObj.getObject('outputs').toLiteral(value => value.getString()),
       queries: metaObj.getArray('queries').map(entry => this.toQueryMetadata(entry.getObject())),
       viewQueries:
@@ -114,7 +153,7 @@ export class FileLinker<TStatement, TExpression> {
         nodes: template.nodes,
         ngContentSelectors: template.ngContentSelectors
       },
-      wrapDirectivesAndPipesInClosure: false,
+      wrapDirectivesAndPipesInClosure,
       styles: metaObj.getArray('styles').map(entry => entry.getString()),
       encapsulation: this.parseEncapsulation(metaObj.getNode('encapsulation')),
       interpolation,
@@ -122,12 +161,9 @@ export class FileLinker<TStatement, TExpression> {
       animations: metaObj.getOpaque('animations'),
       relativeContextFilePath: this.sourceUrl,
       i18nUseExternalIds: true,
-      pipes: metaObj.getObject('pipes').toLiteral(value => value.getOpaque()),
-      directives:
-          metaObj.getArray('directives').map(entry => this.toDirectiveMetadata(entry.getObject())),
-      exportAs: metaObj.getArray('exportAs')
-                    .map(entry => entry.getString()),  // FIXME: account for two forms (or make it
-                                                       // always an array)
+      pipes,
+      directives,
+      exportAs: metaObj.getArray('exportAs').map(entry => entry.getString()),
       lifecycle: {usesOnChanges: metaObj.getBoolean('usesOnChanges')},
       name: typeName,
       usesInheritance: metaObj.getBoolean('usesInheritance'),
@@ -168,18 +204,10 @@ export class FileLinker<TStatement, TExpression> {
     return {
       propertyName: value.getString('propertyName'),
       first: value.getBoolean('first'),
-      predicate: value.getOpaque('predicate'),  // FIXME: account for the two forms
+      predicate: value.getOpaque('predicate'),
       descendants: value.getBoolean('descendants'),
       read: value.getOpaque('read'),
       static: value.getBoolean('static'),
-    };
-  }
-
-  private toDirectiveMetadata(value: AstObject<TExpression>): R3ComponentMetadata['directives'][0] {
-    return {
-      selector: value.getString('selector'),
-      expression: value.getOpaque('type'),
-      meta: null,
     };
   }
 
@@ -220,7 +248,7 @@ export class FileLinker<TStatement, TExpression> {
   }
 }
 
-function wrapReference(wrapped: WrappedNodeExpr<unknown>): R3Reference {
+function wrapReference(wrapped: o.WrappedNodeExpr<unknown>): R3Reference {
   return {value: wrapped, type: wrapped};
 }
 
@@ -259,11 +287,14 @@ class AstObject<TExpression> {
     const arr = this.host.parseArrayLiteral(this.getRequiredProperty(propertyName));
     return arr.map(entry => new AstValue(entry, this.host));
   }
-  getOpaque(propertyName: string): WrappedNodeExpr<any> {
-    return new WrappedNodeExpr(this.getRequiredProperty(propertyName));
+  getOpaque(propertyName: string): o.WrappedNodeExpr<any> {
+    return new o.WrappedNodeExpr(this.getRequiredProperty(propertyName));
   }
   getNode(propertyName: string): TExpression {
     return this.getRequiredProperty(propertyName);
+  }
+  getValue(propertyName: string): AstValue<TExpression> {
+    return new AstValue(this.getRequiredProperty(propertyName), this.host);
   }
   toLiteral<T>(mapper: (value: AstValue<TExpression>) => T): {[key: string]: T} {
     const result: {[key: string]: T} = {};
@@ -283,23 +314,50 @@ class AstObject<TExpression> {
 class AstValue<TExpression> {
   constructor(private value: TExpression, private host: AstHost<TExpression>) {}
 
+  isNumber(): boolean {
+    return this.host.isNumberLiteral(this.value);
+  }
   getNumber(): number {
     return this.host.parseNumberLiteral(this.value);
+  }
+
+  isString(): boolean {
+    return this.host.isStringLiteral(this.value);
   }
   getString(): string {
     return this.host.parseStringLiteral(this.value);
   }
+
+  isBoolean(): boolean {
+    return this.host.isBooleanLiteral(this.value);
+  }
   getBoolean(): boolean {
     return this.host.parseBooleanLiteral(this.value);
   }
+
+  isObject(): boolean {
+    return this.host.isObjectLiteral(this.value);
+  }
   getObject(): AstObject<TExpression> {
     return AstObject.parse(this.value, this.host);
+  }
+
+  isArray(): boolean {
+    return this.host.isArrayLiteral(this.value);
   }
   getArray(): AstValue<TExpression>[] {
     const arr = this.host.parseArrayLiteral(this.value);
     return arr.map(entry => new AstValue(entry, this.host));
   }
-  getOpaque(): WrappedNodeExpr<any> {
-    return new WrappedNodeExpr(this.value);
+
+  getOpaque(): o.WrappedNodeExpr<TExpression> {
+    return new o.WrappedNodeExpr(this.value);
+  }
+
+  isFunction(): boolean {
+    return this.host.isFunction(this.value);
+  }
+  unwrapFunction(): TExpression {
+    return this.host.unwrapFunction(this.value);
   }
 }

@@ -9,15 +9,23 @@
 export interface AstHost<TExpression> {
   getSymbolName(node: TExpression): string|null;
 
+  isStringLiteral(node: TExpression): boolean;
   parseStringLiteral(node: TExpression): string;
 
+  isNumberLiteral(node: TExpression): boolean;
   parseNumberLiteral(node: TExpression): number;
 
+  isBooleanLiteral(node: TExpression): boolean;
   parseBooleanLiteral(node: TExpression): boolean;
 
+  isArrayLiteral(node: TExpression): boolean;
   parseArrayLiteral(node: TExpression): TExpression[];
 
+  isObjectLiteral(node: TExpression): boolean;
   parseObjectLiteral(node: TExpression): Map<string, TExpression>;
+
+  isFunction(node: TExpression): boolean;
+  unwrapFunction(node: TExpression): TExpression;
 }
 
 export function isFatalLinkerError(e: any): e is FatalLinkerError {

@@ -171,11 +171,13 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
   }
 
   setSourceMapRange(node: ts.Statement|ts.Expression, sourceMapRange: SourceMapRange): void {
-    const url =  sourceMapRange.url;
+    const url = sourceMapRange.url;
     if (!this.externalSourceFiles.has(url)) {
-      this.externalSourceFiles.set(url, ts.createSourceMapSource(url, sourceMapRange.content, pos => pos));
+      this.externalSourceFiles.set(
+          url, ts.createSourceMapSource(url, sourceMapRange.content, pos => pos));
     }
     const source = this.externalSourceFiles.get(url);
-    ts.setSourceMapRange(node, {pos: sourceMapRange.start.offset, end: sourceMapRange.end.offset, source});
+    ts.setSourceMapRange(
+        node, {pos: sourceMapRange.start.offset, end: sourceMapRange.end.offset, source});
   }
 }

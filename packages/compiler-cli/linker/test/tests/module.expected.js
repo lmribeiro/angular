@@ -64,14 +64,12 @@ MyComponent.ɵcmp = i0.ɵɵdefineComponent({
       i0.ɵɵproperty("ngIf", true);
     }
   },
-  directives: [function () {
-    return ChildComponent;
-  }, function () {
-    return SomeDirective;
-  }],
-  pipes: [function () {
-    return MultiplyPipe;
-  }],
+  directives: function() {
+    return [ChildComponent, SomeDirective];
+  },
+  pipes: function () {
+    return [MultiplyPipe];
+  },
   encapsulation: 2,
   data: {
     animation: null

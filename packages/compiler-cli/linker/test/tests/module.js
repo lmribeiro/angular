@@ -9,7 +9,7 @@ MyComponent.ɵcmp = i0.$ngDeclareComponent({
   styles: [],
   type: MyComponent,
   selector: 'my-component',
-  inputs: {input: 'input', aliasedIn: 'in'},
+  inputs: {input: 'input', aliasedIn: ['in', 'aliasedIn']},
   outputs: {output: 'output', aliasedOut: 'out'},
   host: {
     attributes: {},
