@@ -310,11 +310,13 @@ export interface R3DeclareComponentMetadata {
   /**
    * Information about the content queries made by the directive.
    */
+  // DONE
   queries: R3QueryMetadata[];
 
   /**
    * Information about the view queries made by the directive.
    */
+  // DONE
   viewQueries: R3QueryMetadata[];
 
   // DONE (not in design doc)

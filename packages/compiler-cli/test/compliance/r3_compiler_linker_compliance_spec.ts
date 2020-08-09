@@ -32,7 +32,7 @@ fdescribe('compiler linker compliance', () => {
     const files = {
       app: {
         'spec.ts': `
-            import {Component, Directive, NgModule, Pipe, Input, Output, EventEmitter, HostBinding, HostListener} from '@angular/core';
+            import {Component, Directive, NgModule, Pipe, Input, Output, EventEmitter, HostBinding, HostListener, ViewChild, ViewChildren, ContentChild, ContentChildren, ViewComponentRef} from '@angular/core';
 
             export class BaseClass {}
 
@@ -66,6 +66,11 @@ fdescribe('compiler linker compliance', () => {
               @Input('in') aliasedIn: string;
               @Output() output: EventEmitter<string>;
               @Output('out') aliasedOut: EventEmitter<string>;
+
+              @ViewChild(ChildComponent, { read: ViewComponentRef, static: true }) viewChild: any;
+              @ViewChildren('a', { descendants: true }) viewChildren: any;
+              @ContentChild('b', { read: ViewComponentRef, static: true }) contentChild: any;
+              @ContentChildren('c') contentChildren: any;
             }
 
             @Pipe({name: 'multiply'})
@@ -100,6 +105,8 @@ fdescribe('compiler linker compliance', () => {
           },
           directives: [],
           pipes: {},
+          queries: [],
+          viewQueries: [],
           exportAs: ["child1", "child2"],
           animations: [],
           encapsulation: i0.ViewEncapsulation.Emulated,
@@ -174,6 +181,40 @@ fdescribe('compiler linker compliance', () => {
           },
           providers: [{provide: 'a', useValue: 'A'}],
           viewProviders: [{provide: 'b', useValue: 'B'}],
+          queries: [
+            {
+              propertyName: "contentChild",
+              first: true,
+              predicate: ["b"],
+              descendants: true,
+              read: ViewComponentRef,
+              static: true
+            },
+            {
+              propertyName: "contentChildren",
+              first: false,
+              predicate: ["c"],
+              descendants: false,
+              static: false
+            }
+          ],
+          viewQueries: [
+            {
+              propertyName: "viewChild",
+              first: true,
+              predicate: ChildComponent,
+              descendants: true,
+              read: ViewComponentRef,
+              static: true
+            },
+            {
+              propertyName: "viewChildren",
+              first: false,
+              predicate: ["a"],
+              descendants: true,
+              static: false
+            }
+          ],
           exportAs: null,
           encapsulation: i0.ViewEncapsulation.Emulated,
           interpolation: ["{{", "}}"],

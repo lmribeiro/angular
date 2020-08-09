@@ -1,5 +1,8 @@
 // clang-format off
 import * as i0 from '@angular/core';
+var _c0 = ["b"];
+var _c1 = ["c"];
+var _c2 = ["a"];
 
 function MyComponent_child_0_Template(rf, ctx) {
   if (rf & 1) {
@@ -21,6 +24,32 @@ class MyComponent {
 MyComponent.ɵcmp = i0.ɵɵdefineComponent({
   type: MyComponent,
   selectors: [["my-component"]],
+  contentQueries: function MyComponent_ContentQueries(rf, ctx, dirIndex) {
+    if (rf & 1) {
+      i0.ɵɵstaticContentQuery(dirIndex, _c0, true, i0.ViewComponentRef);
+      i0.ɵɵcontentQuery(dirIndex, _c1, false);
+    }
+
+    if (rf & 2) {
+      var _t;
+
+      i0.ɵɵqueryRefresh(_t = i0.ɵɵloadQuery()) && (ctx.contentChild = _t.first);
+      i0.ɵɵqueryRefresh(_t = i0.ɵɵloadQuery()) && (ctx.contentChildren = _t);
+    }
+  },
+  viewQuery: function MyComponent_Query(rf, ctx) {
+    if (rf & 1) {
+      i0.ɵɵstaticViewQuery(ChildComponent, true, i0.ViewComponentRef);
+      i0.ɵɵviewQuery(_c2, true);
+    }
+
+    if (rf & 2) {
+      var _t;
+
+      i0.ɵɵqueryRefresh(_t = i0.ɵɵloadQuery()) && (ctx.viewChild = _t.first);
+      i0.ɵɵqueryRefresh(_t = i0.ɵɵloadQuery()) && (ctx.viewChildren = _t);
+    }
+  },
   hostVars: 2,
   hostBindings: function MyComponent_HostBindings(rf, ctx) {
     if (rf & 1) {

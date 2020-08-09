@@ -24,7 +24,13 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
 
   createBinaryExpression(leftOperand: t.Expression, operator: string, rightOperand: t.Expression):
       t.Expression {
-    return t.binaryExpression(operator as any, leftOperand, rightOperand);
+    switch (operator) {
+      case '&&':
+      case '||':
+        return t.logicalExpression(operator, leftOperand, rightOperand);
+      default:
+        return t.binaryExpression(operator as any, leftOperand, rightOperand);
+    }
   }
 
   createCommentStatement(commentText: string, multiline: boolean): t.Statement {

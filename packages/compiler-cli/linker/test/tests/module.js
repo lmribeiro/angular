@@ -41,8 +41,40 @@ MyComponent.ɵcmp = i0.$ngDeclareComponent({
       return MultiplyPipe;
     }
   },
-  queries: [],
-  viewQueries: [],
+  queries: [
+    {
+      propertyName: "contentChild",
+      first: true,
+      predicate: ["b"],
+      descendants: true,
+      read: i0.ViewComponentRef,
+      static: true
+    },
+    {
+      propertyName: "contentChildren",
+      first: false,
+      predicate: ["c"],
+      descendants: false,
+      static: false
+    }
+  ],
+  viewQueries: [
+    {
+      propertyName: "viewChild",
+      first: true,
+      predicate: ChildComponent,
+      descendants: true,
+      read: i0.ViewComponentRef,
+      static: true
+    },
+    {
+      propertyName: "viewChildren",
+      first: false,
+      predicate: ["a"],
+      descendants: true,
+      static: false
+    }
+  ],
   providers: [{provide: 'a', useValue: 'A'}],
   viewProviders: [{provide: 'b', useValue: 'B'}],
   animations: null,

@@ -303,6 +303,9 @@ export function compileDeclareComponentFromMetadata(
   definitionMap.set('providers', meta.providers);
   definitionMap.set('viewProviders', meta.viewProviders);
 
+  definitionMap.set('queries', o.literalArr(meta.queries.map(compileQuery)));
+  definitionMap.set('viewQueries', o.literalArr(meta.viewQueries.map(compileQuery)));
+
   definitionMap.set(
       'exportAs', meta.exportAs !== null ? asLiteral(meta.exportAs) : o.literal(null));
   definitionMap.set('animations', meta.animations);
@@ -460,6 +463,19 @@ function compileUsedPipeMetadata(meta: R3ComponentMetadata): o.LiteralMapExpr {
     entries.push({key, value: wrapType(meta.pipes[key]), quoted: true});
   }
   return o.literalMap(entries);
+}
+
+
+function compileQuery(query: R3QueryMetadata): o.LiteralMapExpr {
+  const meta = new DefinitionMap();
+  meta.set('propertyName', o.literal(query.propertyName));
+  meta.set('first', o.literal(query.first));
+  meta.set(
+      'predicate', Array.isArray(query.predicate) ? asLiteral(query.predicate) : query.predicate);
+  meta.set('descendants', o.literal(query.descendants));
+  meta.set('read', query.read);
+  meta.set('static', o.literal(query.static));
+  return meta.toLiteralMap();
 }
 
 function compileHostMetadata(meta: R3HostMetadata): o.LiteralMapExpr {

@@ -143,7 +143,7 @@ export class FileLinker<TStatement, TExpression> {
       outputs: metaObj.getObject('outputs').toLiteral(value => value.getString()),
       queries: metaObj.getArray('queries').map(entry => this.toQueryMetadata(entry.getObject())),
       viewQueries:
-          metaObj.getArray('queries').map(entry => this.toQueryMetadata(entry.getObject())),
+          metaObj.getArray('viewQueries').map(entry => this.toQueryMetadata(entry.getObject())),
       providers: metaObj.getOpaque('providers'),
       viewProviders: metaObj.getOpaque('viewProviders'),
       fullInheritance: metaObj.getBoolean('fullInheritance'),
@@ -200,14 +200,21 @@ export class FileLinker<TStatement, TExpression> {
     return this.env.factory.createCallExpression(iife, [], false);
   }
 
-  private toQueryMetadata(value: AstObject<TExpression>): R3QueryMetadata {
+  private toQueryMetadata(obj: AstObject<TExpression>): R3QueryMetadata {
+    let predicate: R3QueryMetadata['predicate'];
+    const predicateExpr = obj.getValue('predicate');
+    if (predicateExpr.isArray()) {
+      predicate = predicateExpr.getArray().map(entry => entry.getString());
+    } else {
+      predicate = predicateExpr.getOpaque();
+    }
     return {
-      propertyName: value.getString('propertyName'),
-      first: value.getBoolean('first'),
-      predicate: value.getOpaque('predicate'),
-      descendants: value.getBoolean('descendants'),
-      read: value.getOpaque('read'),
-      static: value.getBoolean('static'),
+      propertyName: obj.getString('propertyName'),
+      first: obj.getBoolean('first'),
+      predicate,
+      descendants: obj.getBoolean('descendants'),
+      read: obj.has('read') ? obj.getOpaque('read') : null,
+      static: obj.getBoolean('static'),
     };
   }
 
@@ -269,6 +276,10 @@ class AstObject<TExpression> {
   constructor(
       private expr: TExpression, private obj: Map<string, TExpression>,
       private host: AstHost<TExpression>) {}
+
+  has(propertyName: string): boolean {
+    return this.obj.has(propertyName);
+  }
 
   getNumber(propertyName: string): number {
     return this.host.parseNumberLiteral(this.getRequiredProperty(propertyName));
