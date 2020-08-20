@@ -7,6 +7,8 @@
  */
 
 /// <reference types="node" />
+import {makeEs2015LinkerPlugin} from '@angular/compiler-cli/linker/src/babel/es2015_linker_plugin';
+import {transformSync} from '@babel/core';
 import {inspect} from 'util';
 
 import {runInEachFileSystem} from '../../src/ngtsc/file_system/testing';
@@ -19,7 +21,7 @@ import {getMappedSegments, SegmentMapping} from './sourcemap_utils';
 const testFiles = loadStandardTestFiles();
 
 runInEachFileSystem((os) => {
-  describe('template source-mapping', () => {
+  fdescribe('template source-mapping', () => {
     let env!: NgtscTestEnvironment;
 
     beforeEach(() => {
@@ -29,8 +31,9 @@ runInEachFileSystem((os) => {
 
     describe('Inline templates', () => {
       describe('(element creation)', () => {
-        it('should map simple element with content', () => {
+        fit('should map simple element with content', () => {
           const mappings = compileAndMap('<h1>Heading 1</h1>');
+          return;
           expect(mappings).toContain(
               {source: '<h1>', generated: 'i0.ɵɵelementStart(0, "h1")', sourceUrl: '../test.ts'});
           expect(mappings).toContain({
@@ -520,7 +523,7 @@ runInEachFileSystem((os) => {
     function compileAndMap(template: string, templateUrl: string|null = null) {
       const templateConfig = templateUrl ? `templateUrl: '${templateUrl}'` :
                                            ('template: `' + template.replace(/`/g, '\\`') + '`');
-      env.tsconfig({sourceMap: true});
+      env.tsconfig({sourceMap: true, compilationModel: 'prelink'});
       env.write('test.ts', `
         import {Component} from '@angular/core';
 
@@ -534,7 +537,41 @@ runInEachFileSystem((os) => {
         env.write(templateUrl, template);
       }
       env.driveMain();
-      return getMappedSegments(env, 'test.js');
+
+      console.log('----------------- pre-link -----------------');
+
+      const prelinkMappings = getMappedSegments(env, 'test.js');
+      dumpMappings(prelinkMappings);
+
+      debugger;
+      const prelinkSourceMap = JSON.parse(env.getContents('test.js.map'));
+      const prelinkContent = env.getContents('test.js');
+      console.log(prelinkContent);
+      console.log(prelinkSourceMap);
+
+      console.log('----------------- post-link -----------------');
+      const result = transformSync(prelinkContent.replace(/\/\/# sourceMappingURL=(.+)/, ''), {
+        filename: 'test.js',
+        // inputSourceMap: prelinkSourceMap,
+        sourceMaps: 'both',
+        plugins: [makeEs2015LinkerPlugin()],
+        parserOpts: {sourceType: 'unambiguous'},
+      });
+      if (result === null) {
+        throw fail('Failed to transform');
+      }
+      if (result.code == null) {
+        throw fail('Transform result does not have any code');
+      }
+
+      console.log(result);
+
+      env.write('built/test-postlink.js', result.code);
+      env.write('built/test-postlink.js.map', JSON.stringify(result.map));
+
+      const postlinkMappings = getMappedSegments(env, 'test-postlink.js');
+      dumpMappings(postlinkMappings);
+      return postlinkMappings;
     }
 
     /**
