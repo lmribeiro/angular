@@ -24,12 +24,9 @@ class TestSourceFile {
         this.lineStarts[startLine - 1] + startCol, this.lineStarts[endLine - 1] + endCol);
   }
 
-  getSourceMapFileName(generatedContents: string): string {
+  getSourceMapFileName(generatedContents: string): string|null {
     const match = /\/\/# sourceMappingURL=(.+)/.exec(generatedContents);
-    if (!match) {
-      throw new Error('Generated contents does not contain a sourceMappingURL');
-    }
-    return match[1];
+    return match && match[1];
   }
 
   private getLineStarts(): number[] {
@@ -66,7 +63,8 @@ export interface SegmentMapping {
 export function getMappedSegments(
     env: NgtscTestEnvironment, generatedFileName: string): SegmentMapping[] {
   const generated = new TestSourceFile(generatedFileName, env.getContents(generatedFileName));
-  const sourceMapFileName = generated.getSourceMapFileName(generated.contents);
+  const sourceMapFileName =
+      generated.getSourceMapFileName(generated.contents) || `${generatedFileName}.map`;
 
   const sources = new Map<string, TestSourceFile>();
   const mappings: MappingItem[] = [];

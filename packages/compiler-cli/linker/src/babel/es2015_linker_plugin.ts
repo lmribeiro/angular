@@ -26,7 +26,7 @@ export function makeEs2015LinkerPlugin(): PluginObj<State> {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State): void {
-          state.linker = createLinker(path.hub.file.opts.filename, env, {
+          state.linker = createLinker(path.hub.file.opts.filename, path.hub.file.code, env, {
             // Note: instead of relying on `sourceType` (which depends on the equivalently named
             // Babel parser option) we may want to look for import/export statements here.
             enableGlobalStatements: path.node.sourceType === 'module',

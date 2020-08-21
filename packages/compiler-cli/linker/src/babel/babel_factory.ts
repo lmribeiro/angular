@@ -151,11 +151,14 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
       start: {
         line: sourceMapRange.start.line,
         column: sourceMapRange.start.column,
+        // filename: sourceMapRange.url,
       },
       end: {
         line: sourceMapRange.end.line,
         column: sourceMapRange.end.column,
       },
     };
+    node.start = sourceMapRange.start.offset;
+    node.end = sourceMapRange.end.offset;
   }
 }

@@ -258,7 +258,7 @@ class _TreeBuilder {
     }
     const end = this._peek.sourceSpan.start;
     const span = new ParseSourceSpan(startTagToken.sourceSpan.start, end);
-    const el = new html.Element(fullName, attrs, [], span, span, undefined);
+    const el = new html.Element(fullName, attrs, [], span, {...span}, undefined);
     this._pushElement(el);
     if (selfClosing) {
       // Elements that are self-closed have their `endSourceSpan` set to the full span, as the

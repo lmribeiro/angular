@@ -289,8 +289,7 @@ export function compileDeclareComponentFromMetadata(
     const templateEnd = meta.template.nodes[meta.template.nodes.length - 1].sourceSpan;
     templateSpan = new ParseSourceSpan(templateStart.start, templateEnd.end, templateStart.details);
   }
-  // definitionMap.set('template', o.literal(meta.template.template, null, templateSpan));
-  definitionMap.set('template', o.literal(''));
+  definitionMap.set('template', o.literal(meta.template.template, null, templateSpan));
 
   definitionMap.set('styles', asLiteral(meta.styles));
 

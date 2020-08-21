@@ -12,7 +12,7 @@ import * as o from '@angular/compiler/src/output/output_ast';
 import {ChangeDetectionStrategy, ViewEncapsulation} from '../../../compiler/src/core';
 import {AstFactory} from '../../src/ngtsc/translator';
 
-import {AstHost, FatalLinkerError} from './api';
+import {AstHost, FatalLinkerError, Range} from './api';
 import {translateExpression, translateStatement} from './translator';
 
 export interface LinkerEnvironment<TStatement, TExpression> {
@@ -25,9 +25,9 @@ export interface LinkerOptions {
 }
 
 export function createLinker<TStatement, TExpression>(
-    sourceUrl: string, env: LinkerEnvironment<TStatement, TExpression>,
+    sourceUrl: string, code: string, env: LinkerEnvironment<TStatement, TExpression>,
     options: Partial<LinkerOptions> = {}): FileLinker<TStatement, TExpression> {
-  return new FileLinker(sourceUrl, env, {
+  return new FileLinker(sourceUrl, code, env, {
     enableGlobalStatements: true,
     ...options,
   });
@@ -38,8 +38,8 @@ export class FileLinker<TStatement, TExpression> {
   private ngImport: TExpression|null = null;
 
   constructor(
-      private sourceUrl: string, private env: LinkerEnvironment<TStatement, TExpression>,
-      private options: LinkerOptions) {
+      private sourceUrl: string, private code: string,
+      private env: LinkerEnvironment<TStatement, TExpression>, private options: LinkerOptions) {
     if (!this.sourceUrl) {
       throw new Error('sourceUrl is required');
     }
@@ -78,10 +78,11 @@ export class FileLinker<TStatement, TExpression> {
 
     const interpolation = InterpolationConfig.fromArray(
         metaObj.getArray('interpolation').map(entry => entry.getString()) as [string, string]);
-    const templateStr = metaObj.getString('template');
-    const template = parseTemplate(templateStr, this.sourceUrl, {
+    const templateNode = metaObj.getValue('template');
+    const template = parseTemplate(this.code, this.sourceUrl, {
       escapedString: true,
       interpolationConfig: interpolation,
+      range: templateNode.getTemplateRange()
     });
     if (template.errors !== undefined) {
       const errors = template.errors.map(err => err.toString()).join(', ');
@@ -152,7 +153,7 @@ export class FileLinker<TStatement, TExpression> {
       fullInheritance: metaObj.getBoolean('fullInheritance'),
       selector: metaObj.getString('selector'),
       template: {
-        template: templateStr,
+        template: templateNode.getString(),
         nodes: template.nodes,
         ngContentSelectors: template.ngContentSelectors
       },
@@ -372,6 +373,10 @@ class AstValue<TExpression> {
 
   getOpaque(): o.WrappedNodeExpr<TExpression> {
     return new o.WrappedNodeExpr(this.value);
+  }
+
+  getTemplateRange(): Range {
+    return this.host.getTemplateRange(this.value);
   }
 
   isFunction(): boolean {

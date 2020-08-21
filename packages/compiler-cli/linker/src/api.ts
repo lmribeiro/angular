@@ -26,6 +26,15 @@ export interface AstHost<TExpression> {
 
   isFunction(node: TExpression): boolean;
   unwrapFunction(node: TExpression): TExpression;
+
+  getTemplateRange(node: TExpression): Range;
+}
+
+export interface Range {
+  startPos: number;
+  startLine: number;
+  startCol: number;
+  endPos: number;
 }
 
 export function isFatalLinkerError(e: any): e is FatalLinkerError {

@@ -33,7 +33,6 @@ runInEachFileSystem((os) => {
       describe('(element creation)', () => {
         fit('should map simple element with content', () => {
           const mappings = compileAndMap('<h1>Heading 1</h1>');
-          return;
           expect(mappings).toContain(
               {source: '<h1>', generated: 'i0.ɵɵelementStart(0, "h1")', sourceUrl: '../test.ts'});
           expect(mappings).toContain({
@@ -523,7 +522,7 @@ runInEachFileSystem((os) => {
     function compileAndMap(template: string, templateUrl: string|null = null) {
       const templateConfig = templateUrl ? `templateUrl: '${templateUrl}'` :
                                            ('template: `' + template.replace(/`/g, '\\`') + '`');
-      env.tsconfig({sourceMap: true, compilationModel: 'prelink'});
+      env.tsconfig({sourceMap: true, inlineSources: true, compilationModel: 'prelink'});
       env.write('test.ts', `
         import {Component} from '@angular/core';
 
@@ -541,21 +540,21 @@ runInEachFileSystem((os) => {
       console.log('----------------- pre-link -----------------');
 
       const prelinkMappings = getMappedSegments(env, 'test.js');
-      dumpMappings(prelinkMappings);
+      const prelinkSourceMap = env.getContents('test.js.map');
+      const prelinkContent = env.getContents('test.js');
 
       debugger;
-      const prelinkSourceMap = JSON.parse(env.getContents('test.js.map'));
-      const prelinkContent = env.getContents('test.js');
       console.log(prelinkContent);
       console.log(prelinkSourceMap);
+      dumpMappings(prelinkMappings);
 
       console.log('----------------- post-link -----------------');
-      const result = transformSync(prelinkContent.replace(/\/\/# sourceMappingURL=(.+)/, ''), {
+      const result = transformSync(prelinkContent, {
         filename: 'test.js',
-        // inputSourceMap: prelinkSourceMap,
-        sourceMaps: 'both',
+        inputSourceMap: JSON.parse(prelinkSourceMap),
+        sourceMaps: true,
         plugins: [makeEs2015LinkerPlugin()],
-        parserOpts: {sourceType: 'unambiguous'},
+        parserOpts: {sourceType: 'module', createParenthesizedExpressions: true},
       });
       if (result === null) {
         throw fail('Failed to transform');
@@ -564,13 +563,28 @@ runInEachFileSystem((os) => {
         throw fail('Transform result does not have any code');
       }
 
-      console.log(result);
-
       env.write('built/test-postlink.js', result.code);
       env.write('built/test-postlink.js.map', JSON.stringify(result.map));
 
+      const postlinkContent = env.getContents('test-postlink.js');
+      const postlinkSourceMap = env.getContents('test-postlink.js.map');
+      console.log(postlinkContent);
+
       const postlinkMappings = getMappedSegments(env, 'test-postlink.js');
       dumpMappings(postlinkMappings);
+
+      console.log('------------ CONTENT -------------');
+      console.log(prelinkContent);
+      console.log('..................................')
+      console.log(postlinkContent);
+      console.log('..................................')
+
+      console.log('------------ MAP -------------');
+      console.log(prelinkSourceMap);
+      console.log('..................................')
+      console.log(postlinkSourceMap);
+      console.log('..................................')
+
       return postlinkMappings;
     }
 

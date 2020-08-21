@@ -671,7 +671,7 @@ export class TemplateDefinitionBuilder implements t.Visitor<void>, LocalResolver
           trimTrailingNulls(parameters));
     } else {
       this.creationInstruction(
-          element.sourceSpan, isNgContainer ? R3.elementContainerStart : R3.elementStart,
+          element.startSourceSpan, isNgContainer ? R3.elementContainerStart : R3.elementStart,
           trimTrailingNulls(parameters));
 
       if (isNonBindableMode) {
