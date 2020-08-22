@@ -11,7 +11,10 @@ import {makeEs2015LinkerPlugin} from '@angular/compiler-cli/linker/src/babel/es2
 import {transformSync} from '@babel/core';
 import {inspect} from 'util';
 
+import {absoluteFrom, getFileSystem} from '../../src/ngtsc/file_system';
 import {runInEachFileSystem} from '../../src/ngtsc/file_system/testing';
+import {MockLogger} from '../../src/ngtsc/logging/testing';
+import {SourceFileLoader} from '../../src/ngtsc/sourcemaps';
 import {tsSourceMapBug29300Fixed} from '../../src/ngtsc/util/src/ts_source_map_bug_29300';
 import {loadStandardTestFiles} from '../helpers/src/mock_file_loading';
 
@@ -549,9 +552,9 @@ runInEachFileSystem((os) => {
       dumpMappings(prelinkMappings);
 
       console.log('----------------- post-link -----------------');
+      debugger;
       const result = transformSync(prelinkContent, {
         filename: 'test.js',
-        inputSourceMap: JSON.parse(prelinkSourceMap),
         sourceMaps: true,
         plugins: [makeEs2015LinkerPlugin()],
         parserOpts: {sourceType: 'module', createParenthesizedExpressions: true},
@@ -562,9 +565,16 @@ runInEachFileSystem((os) => {
       if (result.code == null) {
         throw fail('Transform result does not have any code');
       }
-
       env.write('built/test-postlink.js', result.code);
-      env.write('built/test-postlink.js.map', JSON.stringify(result.map));
+
+      // Merge the input and output source-maps
+      const fs = getFileSystem();
+      const loader = new SourceFileLoader(fs, new MockLogger(), {});
+      const file = loader.loadSourceFile(absoluteFrom('/built/test-postlink.js'), result.code, {
+        map: result.map!,
+        mapPath: absoluteFrom('/built/test-postlink.js.map'),
+      });
+      env.write('built/test-postlink.js.map', JSON.stringify(file.renderFlattenedSourceMap()));
 
       const postlinkContent = env.getContents('test-postlink.js');
       const postlinkSourceMap = env.getContents('test-postlink.js.map');
@@ -575,15 +585,15 @@ runInEachFileSystem((os) => {
 
       console.log('------------ CONTENT -------------');
       console.log(prelinkContent);
-      console.log('..................................')
+      console.log('..................................');
       console.log(postlinkContent);
-      console.log('..................................')
+      console.log('..................................');
 
       console.log('------------ MAP -------------');
       console.log(prelinkSourceMap);
-      console.log('..................................')
+      console.log('..................................');
       console.log(postlinkSourceMap);
-      console.log('..................................')
+      console.log('..................................');
 
       return postlinkMappings;
     }

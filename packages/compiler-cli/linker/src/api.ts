@@ -27,7 +27,7 @@ export interface AstHost<TExpression> {
   isFunction(node: TExpression): boolean;
   unwrapFunction(node: TExpression): TExpression;
 
-  getTemplateRange(node: TExpression): Range;
+  getRange(node: TExpression): Range;
 }
 
 export interface Range {

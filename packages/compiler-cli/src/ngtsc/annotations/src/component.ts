@@ -315,6 +315,7 @@ export class ComponentDecoratorHandler implements
           template: {
             template: template.template,
             nodes: template.emitNodes,
+            type: template.sourceMapping.type,
             ngContentSelectors: template.ngContentSelectors,
           },
           encapsulation,

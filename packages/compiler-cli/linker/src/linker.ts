@@ -79,11 +79,10 @@ export class FileLinker<TStatement, TExpression> {
     const interpolation = InterpolationConfig.fromArray(
         metaObj.getArray('interpolation').map(entry => entry.getString()) as [string, string]);
     const templateNode = metaObj.getValue('template');
-    const template = parseTemplate(this.code, this.sourceUrl, {
-      escapedString: true,
-      interpolationConfig: interpolation,
-      range: templateNode.getTemplateRange()
-    });
+    const range = getTemplateRange(templateNode, this.code);
+    const template = parseTemplate(
+        this.code, this.sourceUrl,
+        {escapedString: true, interpolationConfig: interpolation, range});
     if (template.errors !== undefined) {
       const errors = template.errors.map(err => err.toString()).join(', ');
       this.fail(
@@ -277,6 +276,26 @@ export function createSourceSpan(
       new ParseLocation(sourceFile, -1, -1, -1), new ParseLocation(sourceFile, -1, -1, -1));
 }
 
+/**
+ * Update the range to remove the start and end chars, which should be quotes around the template.
+ */
+function getTemplateRange<TExpression>(templateNode: AstValue<TExpression>, code: string): Range {
+  const {startPos, endPos, startLine, startCol} = templateNode.getRange();
+
+  if (!/["'`]/.test(code[startPos]) || code[startPos] !== code[endPos - 1]) {
+    throw new FatalLinkerError(
+        templateNode,
+        `Expected the template string to be wrapped in quotes but got: ${
+            code.substring(startPos, endPos)}`);
+  }
+  return {
+    startPos: startPos + 1,
+    endPos: endPos - 1,
+    startLine,
+    startCol: startCol + 1,
+  };
+}
+
 class AstObject<TExpression> {
   static parse<TExpression>(expr: TExpression, host: AstHost<TExpression>): AstObject<TExpression> {
     const obj = host.parseObjectLiteral(expr);
@@ -375,8 +394,8 @@ class AstValue<TExpression> {
     return new o.WrappedNodeExpr(this.value);
   }
 
-  getTemplateRange(): Range {
-    return this.host.getTemplateRange(this.value);
+  getRange(): Range {
+    return this.host.getRange(this.value);
   }
 
   isFunction(): boolean {
