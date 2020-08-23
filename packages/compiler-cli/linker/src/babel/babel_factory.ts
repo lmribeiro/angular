@@ -8,11 +8,13 @@
 
 import * as t from '@babel/types';
 
-import {AstFactory, ObjectLiteralProperty, SourceMapRange} from '../../../src/ngtsc/translator';
+import {AstFactory, ObjectLiteralProperty, SourceMapRange, TemplateLiteral} from '../../../src/ngtsc/translator';
 
 import {assert} from './source_file_utils';
 
 export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
+  nextComments: {text: string, multiline: boolean}[] = [];
+
   createArrayLiteral(elements: t.Expression[]): t.Expression {
     return t.arrayExpression(elements);
   }
@@ -33,10 +35,8 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
     }
   }
 
-  createCommentStatement(commentText: string, multiline: boolean): t.Statement {
-    const statement = t.emptyStatement();
-    t.addComment(statement, 'leading', commentText, multiline);
-    return statement;
+  addLeadingComment(text: string, multiline: boolean): void {
+    this.nextComments.push({text, multiline});
   }
 
   createConditional(
@@ -54,7 +54,7 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
   }
 
   createExpressionStatement(expression: t.Expression): t.Statement {
-    return t.expressionStatement(expression);
+    return this.attachComments(t.expressionStatement(expression));
   }
 
   createCallExpression(callee: t.Expression, args: t.Expression[], pure: boolean): t.Expression {
@@ -64,8 +64,8 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
   createFunctionDeclaration(functionName: string|null, parameters: string[], body: t.Statement):
       t.Statement {
     assert(body, t.isBlockStatement, 'a block');
-    return t.functionDeclaration(
-        t.identifier(functionName), parameters.map(param => t.identifier(param)), body);
+    return this.attachComments(t.functionDeclaration(
+        t.identifier(functionName), parameters.map(param => t.identifier(param)), body));
   }
 
   createFunctionExpression(functionName: string|null, parameters: string[], body: t.Statement):
@@ -82,7 +82,7 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
   createIfStatement(
       condition: t.Expression, thenStatement: t.Statement,
       elseStatement: t.Statement|null): t.Statement {
-    return t.ifStatement(condition, thenStatement, elseStatement);
+    return this.attachComments(t.ifStatement(condition, thenStatement, elseStatement));
   }
 
   createLiteral(value: string|number|boolean|null|undefined): t.Expression {
@@ -113,20 +113,26 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
     }));
   }
 
+  createTaggedTemplate(tag: t.Expression, template: TemplateLiteral<t.Expression>): t.Expression {
+    const elements = template.elements.map(
+        (element, i) => t.templateElement(element, i === template.elements.length - 1));
+    return t.taggedTemplateExpression(tag, t.templateLiteral(elements, template.expressions));
+  }
+
   createPropertyAccess(expression: t.Expression, propertyName: string): t.Expression {
     return t.memberExpression(expression, t.identifier(propertyName), /* computed */ false);
   }
 
   createReturnStatement(expression: t.Expression|null): t.Statement {
-    return t.returnStatement(expression);
+    return this.attachComments(t.returnStatement(expression));
   }
 
   createThrowStatement(expression: t.Expression): t.Statement {
-    return t.throwStatement(expression);
+    return this.attachComments(t.throwStatement(expression));
   }
 
   createBlock(body: t.Statement[]): t.Statement {
-    return t.blockStatement(body);
+    return this.attachComments(t.blockStatement(body));
   }
 
   createTypeOfExpression(expression: t.Expression): t.Expression {
@@ -139,8 +145,8 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
 
   createVariableDeclaration(variableName: string, initializer: t.Expression|null, final: boolean):
       t.Statement {
-    return t.variableDeclaration(
-        final ? 'const' : 'var', [t.variableDeclarator(t.identifier(variableName), initializer)]);
+    return this.attachComments(t.variableDeclaration(
+        final ? 'const' : 'var', [t.variableDeclarator(t.identifier(variableName), initializer)]));
   }
 
   setSourceMapRange(node: t.Statement|t.Expression, sourceMapRange: SourceMapRange): void {
@@ -160,5 +166,13 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
     };
     node.start = sourceMapRange.start.offset;
     node.end = sourceMapRange.end.offset;
+  }
+
+  private attachComments(statement: t.Statement): t.Statement {
+    let comment: {text: string, multiline: boolean}|undefined;
+    while (comment = this.nextComments.shift()) {
+      t.addComment(statement, 'leading', comment.text, !comment.multiline);
+    }
+    return statement;
   }
 }

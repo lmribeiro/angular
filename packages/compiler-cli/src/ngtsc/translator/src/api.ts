@@ -27,6 +27,16 @@ export interface PropertyAssignment<TExpression> {
 
 export type ObjectLiteralProperty<TExpression> = PropertyAssignment<TExpression>;
 
+export interface TemplateLiteral<TExpression> {
+  elements: TemplateElement[];
+  expressions: TExpression[];
+}
+
+export interface TemplateElement {
+  raw: string;
+  cooked: string;
+}
+
 export interface AstFactory<TStatement, TExpression> {
   createIdentifier(name: string): TExpression;
 
@@ -59,6 +69,8 @@ export interface AstFactory<TStatement, TExpression> {
 
   createObjectLiteral(properties: ObjectLiteralProperty<TExpression>[]): TExpression;
 
+  createTaggedTemplate(tag: TExpression, template: TemplateLiteral<TExpression>): TExpression;
+
   createVariableDeclaration(variableName: string, initializer: TExpression|null, final: boolean):
       TStatement;
 
@@ -80,7 +92,7 @@ export interface AstFactory<TStatement, TExpression> {
 
   createThrowStatement(expression: TExpression): TStatement;
 
-  createCommentStatement(commentText: string, multiline: boolean): TStatement;
+  addLeadingComment(commentText: string, multiline: boolean): void;
 
   setSourceMapRange(node: TStatement|TExpression, sourceMapRange: SourceMapRange): void;
 }

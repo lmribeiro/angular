@@ -9,7 +9,7 @@ import * as ts from 'typescript';
 
 import {DefaultImportRecorder} from '../../imports';
 
-import {AstFactory, ObjectLiteralProperty, SourceMapRange} from './api';
+import {AstFactory, ObjectLiteralProperty, SourceMapRange, TemplateLiteral} from './api';
 
 const BINARY_OPERATORS = new Map<string, ts.BinaryOperator>([
   ['&&', ts.SyntaxKind.AmpersandAmpersandToken],
@@ -32,6 +32,7 @@ const BINARY_OPERATORS = new Map<string, ts.BinaryOperator>([
 
 export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression> {
   private externalSourceFiles = new Map<string, ts.SourceMapSource>();
+  private nextComments: {text: string, multiline: boolean}[] = [];
 
   constructor(
       private defaultImportRecorder: DefaultImportRecorder,
@@ -54,20 +55,15 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
   }
 
   createBlock(body: ts.Statement[]): ts.Statement {
-    return ts.createBlock(body);
+    return this.attachComments(ts.createBlock(body));
   }
 
   createCallExpression(callee: ts.Expression, args: ts.Expression[], pure: boolean): ts.Expression {
     return ts.createCall(callee, undefined, args);
   }
 
-  createCommentStatement(commentText: string, multiline: boolean): ts.Statement {
-    const commentStmt = ts.createNotEmittedStatement(ts.createLiteral(''));
-    ts.addSyntheticLeadingComment(
-        commentStmt,
-        multiline ? ts.SyntaxKind.MultiLineCommentTrivia : ts.SyntaxKind.SingleLineCommentTrivia,
-        commentText, /** hasTrailingNewLine */ false);
-    return commentStmt;
+  addLeadingComment(text: string, multiline: boolean): void {
+    this.nextComments.push({text, multiline});
   }
 
   createConditional(
@@ -81,7 +77,7 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
   }
 
   createExpressionStatement(expression: ts.Expression): ts.Statement {
-    return ts.createExpressionStatement(expression);
+    return this.attachComments(ts.createExpressionStatement(expression));
   }
 
   createFunctionDeclaration(functionName: string|null, parameters: string[], body: ts.Statement):
@@ -89,10 +85,10 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
     if (!ts.isBlock(body)) {
       throw new Error('Invalid syntax, expected a block');
     }
-    return ts.createFunctionDeclaration(
+    return this.attachComments(ts.createFunctionDeclaration(
         undefined, undefined, undefined, functionName ?? undefined, undefined,
         parameters.map(param => ts.createParameter(undefined, undefined, undefined, param)),
-        undefined, body);
+        undefined, body));
   }
 
   createFunctionExpression(functionName: string|null, parameters: string[], body: ts.Statement):
@@ -113,7 +109,7 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
   createIfStatement(
       condition: ts.Expression, thenStatement: ts.Statement,
       elseStatement: ts.Statement|null): ts.Statement {
-    return ts.createIf(condition, thenStatement, elseStatement ?? undefined);
+    return this.attachComments(ts.createIf(condition, thenStatement, elseStatement ?? undefined));
   }
 
   createLiteral(value: string|number|boolean|null|undefined): ts.Expression {
@@ -134,16 +130,44 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
     return ts.createObjectLiteral();
   }
 
+  createTaggedTemplate(tag: ts.Expression, template: TemplateLiteral<ts.Expression>):
+      ts.Expression {
+    let templateLiteral: ts.TemplateLiteral;
+    const length = template.elements.length;
+    const head = template.elements[0];
+    if (length === 1) {
+      templateLiteral = ts.createNoSubstitutionTemplateLiteral(head.cooked, head.raw);
+    } else {
+      const spans: ts.TemplateSpan[] = [];
+      // Create the middle parts
+      for (let i = 1; i < length - 1; i++) {
+        const {cooked, raw} = template.elements[i];
+        spans.push(
+            ts.createTemplateSpan(template.expressions[i - 1], createTemplateMiddle(cooked, raw)));
+      }
+      // Create the tail part
+      const resolvedExpression = template.expressions[length - 2];
+      const templatePart = template.elements[length - 1];
+      const templateTail = createTemplateTail(templatePart.cooked, templatePart.raw);
+      spans.push(ts.createTemplateSpan(resolvedExpression, templateTail));
+      // Put it all together
+      templateLiteral =
+          ts.createTemplateExpression(ts.createTemplateHead(head.cooked, head.raw), spans);
+    }
+    return ts.createTaggedTemplate(tag, templateLiteral);
+  }
+
+
   createPropertyAccess(expression: ts.Expression, propertyName: string): ts.Expression {
     return ts.createPropertyAccess(expression, propertyName);
   }
 
   createReturnStatement(expression: ts.Expression|null): ts.Statement {
-    return ts.createReturn(expression ?? undefined);
+    return this.attachComments(ts.createReturn(expression ?? undefined));
   }
 
   createThrowStatement(expression: ts.Expression): ts.Statement {
-    return ts.createThrow(expression);
+    return this.attachComments(ts.createThrow(expression));
   }
 
   createTypeOfExpression(expression: ts.Expression): ts.Expression {
@@ -166,12 +190,12 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
     const nodeFlags = ((this.scriptTarget >= ts.ScriptTarget.ES2015) && final) ?
         ts.NodeFlags.Const :
         ts.NodeFlags.None;
-    return ts.createVariableStatement(
+    return this.attachComments(ts.createVariableStatement(
         undefined,
         ts.createVariableDeclarationList(
             [ts.createVariableDeclaration(variableName, undefined, initializer ?? undefined)],
             nodeFlags),
-    );
+        ));
   }
 
   setSourceMapRange(node: ts.Statement|ts.Expression, sourceMapRange: SourceMapRange): void {
@@ -184,4 +208,32 @@ export class TypeScriptFactory implements AstFactory<ts.Statement, ts.Expression
     ts.setSourceMapRange(
         node, {pos: sourceMapRange.start.offset, end: sourceMapRange.end.offset, source});
   }
+
+  private attachComments(statement: ts.Statement): ts.Statement {
+    let comment: {text: string, multiline: boolean}|undefined;
+    while (comment = this.nextComments.shift()) {
+      ts.addSyntheticLeadingComment(
+          statement,
+          comment.multiline ? ts.SyntaxKind.MultiLineCommentTrivia :
+                              ts.SyntaxKind.SingleLineCommentTrivia,
+          comment.text, /** hasTrailingNewLine */ false);
+    }
+    return statement;
+  }
+}
+
+// HACK: Use this in place of `ts.createTemplateMiddle()`.
+// Revert once https://github.com/microsoft/TypeScript/issues/35374 is fixed
+function createTemplateMiddle(cooked: string, raw: string): ts.TemplateMiddle {
+  const node: ts.TemplateLiteralLikeNode = ts.createTemplateHead(cooked, raw);
+  node.kind = ts.SyntaxKind.TemplateMiddle;
+  return node as ts.TemplateMiddle;
+}
+
+// HACK: Use this in place of `ts.createTemplateTail()`.
+// Revert once https://github.com/microsoft/TypeScript/issues/35374 is fixed
+function createTemplateTail(cooked: string, raw: string): ts.TemplateTail {
+  const node: ts.TemplateLiteralLikeNode = ts.createTemplateHead(cooked, raw);
+  node.kind = ts.SyntaxKind.TemplateTail;
+  return node as ts.TemplateTail;
 }
