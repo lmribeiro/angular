@@ -12,6 +12,7 @@ import * as html from '../ml_parser/ast';
 import {getHtmlTagDefinition} from '../ml_parser/html_tags';
 import {InterpolationConfig} from '../ml_parser/interpolation_config';
 import {ParseSourceSpan} from '../parse_util';
+import {unescape} from '../util';
 
 import * as i18n from './i18n_ast';
 import {PlaceholderRegistry} from './serializers/placeholder';
@@ -83,7 +84,7 @@ class _I18nVisitor implements html.Visitor {
     const isVoid: boolean = getHtmlTagDefinition(el.name).isVoid;
     const startPhName =
         context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-    context.placeholderToContent[startPhName] = el.sourceSpan!.toString();
+    context.placeholderToContent[startPhName] = unescape(el.startSourceSpan!.toString());
 
     let closePhName = '';
 

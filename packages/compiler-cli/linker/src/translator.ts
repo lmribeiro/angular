@@ -185,8 +185,7 @@ class ExpressionTranslatorVisitor<TStatement, TExpression> implements Expression
   visitLocalizedString(ast: LocalizedString, context: Context): TExpression {
     const elements: TemplateElement[] = [ast.serializeI18nHead()];
     const expressions: TExpression[] = [];
-
-    for (let i = 0; i < ast.expressions.length - 1; i++) {
+    for (let i = 0; i < ast.expressions.length; i++) {
       expressions.push(ast.expressions[i].visitExpression(this, context));
       elements.push(ast.serializeI18nTemplatePart(i + 1));
     }

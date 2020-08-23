@@ -109,7 +109,7 @@ export class BabelFactory implements AstFactory<t.Statement, t.Expression> {
     return t.objectExpression(properties.map(prop => {
       const key =
           prop.quoted ? t.stringLiteral(prop.propertyName) : t.identifier(prop.propertyName);
-      return t.objectProperty(key, prop.value, prop.quoted);
+      return t.objectProperty(key, prop.value);
     }));
   }
 
