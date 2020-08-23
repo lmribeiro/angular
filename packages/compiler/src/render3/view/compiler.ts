@@ -300,6 +300,7 @@ export function compileDeclareComponentFromMetadata(
     }
   }
   definitionMap.set('template', o.literal(templateStr, null, templateSpan));
+  definitionMap.set('templateType', o.literal(meta.template.type));
 
   definitionMap.set('styles', asLiteral(meta.styles));
 

@@ -22,15 +22,15 @@ export interface LinkerEnvironment<TStatement, TExpression> {
 
 export interface LinkerOptions {
   enableGlobalStatements: boolean;
+  enableI18nLegacyMessageIdFormat: boolean;
 }
 
 export function createLinker<TStatement, TExpression>(
     sourceUrl: string, code: string, env: LinkerEnvironment<TStatement, TExpression>,
-    options: Partial<LinkerOptions> = {}): FileLinker<TStatement, TExpression> {
-  return new FileLinker(sourceUrl, code, env, {
-    enableGlobalStatements: true,
-    ...options,
-  });
+    {enableGlobalStatements = true, enableI18nLegacyMessageIdFormat = true}:
+        Partial<LinkerOptions> = {}): FileLinker<TStatement, TExpression> {
+  return new FileLinker(
+      sourceUrl, code, env, {enableGlobalStatements, enableI18nLegacyMessageIdFormat});
 }
 
 export class FileLinker<TStatement, TExpression> {
@@ -80,9 +80,12 @@ export class FileLinker<TStatement, TExpression> {
         metaObj.getArray('interpolation').map(entry => entry.getString()) as [string, string]);
     const templateNode = metaObj.getValue('template');
     const range = getTemplateRange(templateNode, this.code);
-    const template = parseTemplate(
-        this.code, this.sourceUrl,
-        {escapedString: true, interpolationConfig: interpolation, range});
+    const template = parseTemplate(this.code, this.sourceUrl, {
+      escapedString: true,
+      interpolationConfig: interpolation,
+      range,
+      enableI18nLegacyMessageIdFormat: this.options.enableI18nLegacyMessageIdFormat,
+    });
     if (template.errors !== undefined) {
       const errors = template.errors.map(err => err.toString()).join(', ');
       this.fail(

@@ -203,7 +203,7 @@ export function compile(
     data: MockDirectory, angularFiles: MockData, options: AotCompilerOptions = {},
     errorCollector: (error: any, fileName?: string) => void = error => {
       throw error;
-    }): {
+    }, enableI18nLegacyMessageIdFormat: boolean|undefined = false): {
   source: string,
 } {
   setFileSystem(new NodeJSFileSystem());
@@ -218,7 +218,7 @@ export function compile(
         target: ts.ScriptTarget.ES2015,
         module: ts.ModuleKind.ES2015,
         moduleResolution: ts.ModuleResolutionKind.NodeJs,
-        enableI18nLegacyMessageIdFormat: false,
+        enableI18nLegacyMessageIdFormat,
         compilationModel: 'prelink',
         ...options,
       },
@@ -235,7 +235,7 @@ export function compile(
 
                        const result = transformSync(content, {
                          filename,
-                         plugins: [makeEs2015LinkerPlugin()],
+                         plugins: [makeEs2015LinkerPlugin({enableI18nLegacyMessageIdFormat})],
                          parserOpts: {sourceType: 'unambiguous'},
                        });
                        if (result === null) {

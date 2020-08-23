@@ -10,13 +10,13 @@ import {NodePath} from '@babel/traverse';
 import * as t from '@babel/types';
 
 import {isFatalLinkerError} from '../api';
-import {createLinker, FileLinker, LinkerEnvironment} from '../linker';
+import {createLinker, FileLinker, LinkerEnvironment, LinkerOptions} from '../linker';
 
 import {BabelFactory} from './babel_factory';
 import {BabelAstHost} from './babel_host';
 import {buildCodeFrameError} from './source_file_utils';
 
-export function makeEs2015LinkerPlugin(): PluginObj<State> {
+export function makeEs2015LinkerPlugin(options: Partial<LinkerOptions>): PluginObj<State> {
   const env: LinkerEnvironment<t.Statement, t.Expression> = {
     astHost: new BabelAstHost(),
     factory: new BabelFactory(),
@@ -30,6 +30,7 @@ export function makeEs2015LinkerPlugin(): PluginObj<State> {
             // Note: instead of relying on `sourceType` (which depends on the equivalently named
             // Babel parser option) we may want to look for import/export statements here.
             enableGlobalStatements: path.node.sourceType === 'module',
+            enableI18nLegacyMessageIdFormat: options.enableI18nLegacyMessageIdFormat,
           });
         },
         exit(path: NodePath<t.Program>, state: State): void {
