@@ -218,7 +218,6 @@ export function compile(
         target: ts.ScriptTarget.ES2015,
         module: ts.ModuleKind.ES2015,
         moduleResolution: ts.ModuleResolutionKind.NodeJs,
-        compilationModel: 'prelink',
         ...options,
       },
       mockCompilerHost);
@@ -228,7 +227,7 @@ export function compile(
                        const filename = script.replace(/\.ts$/, '.js');
                        const content = mockCompilerHost.readFile(filename);
 
-                       if (!filename.endsWith('.js')) {
+                       if (!filename.endsWith('.js') || options.compilationModel === 'aot') {
                          return content;
                        }
 
@@ -248,4 +247,15 @@ export function compile(
                      .join('\n');
 
   return {source};
+}
+
+/**
+ * Create a compile function that is preconfigured with a compilationModel.
+ * If in `prelink` model then the function will also run the "linker" so that the final output
+ * should be equivalent to what would be produced in `aot` mode.
+ */
+export function compileFnFactory(compilationModel: 'aot'|'prelink'): typeof compile {
+  return (data, angularFiles, options = {}, errorCollector?) => {
+    return compile(data, angularFiles, {...options, compilationModel}, errorCollector);
+  };
 }
