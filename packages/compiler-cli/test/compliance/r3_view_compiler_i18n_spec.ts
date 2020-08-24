@@ -155,14 +155,12 @@ ${output}
 
 const verify = (input: string, output: string, extra: any = {}): void => {
   const files = getAppFilesWithTemplate(input, extra.inputArgs);
-  const opts = (i18nUseExternalIds: boolean) =>
-      ({i18nUseExternalIds, ...(extra.compilerOptions || {})});
+  const opts = (i18nUseExternalIds: boolean) => (
+      {i18nUseExternalIds, ...(extra.compilerOptions || {enableI18nLegacyMessageIdFormat: false})});
 
   // invoke with file-based prefix translation names
   if (!extra.skipPathBasedCheck) {
-    const result = compile(
-        files, angularFiles, opts(false), undefined,
-        extra.compilerOptions?.enableI18nLegacyMessageIdFormat);
+    const result = compile(files, angularFiles, opts(false), undefined);
     maybePrint(result.source, extra.verbose);
     expect(verifyPlaceholdersIntegrity(result.source)).toBe(true);
     expect(verifyUniqueConsts(result.source)).toBe(true);

@@ -160,7 +160,6 @@ export interface R3ComponentMetadata extends R3DirectiveMetadata {
      * element without selector is present.
      */
     ngContentSelectors: string[];
-    type?: 'direct' | 'indirect' | 'external';
   };
 
   /**

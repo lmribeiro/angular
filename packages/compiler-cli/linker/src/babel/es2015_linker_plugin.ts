@@ -30,7 +30,7 @@ export function makeEs2015LinkerPlugin(options: Partial<LinkerOptions>): PluginO
             // Note: instead of relying on `sourceType` (which depends on the equivalently named
             // Babel parser option) we may want to look for import/export statements here.
             enableGlobalStatements: path.node.sourceType === 'module',
-            enableI18nLegacyMessageIdFormat: options.enableI18nLegacyMessageIdFormat,
+            enableI18nLegacyMessageIdFormat: options.enableI18nLegacyMessageIdFormat ?? true,
           });
         },
         exit(path: NodePath<t.Program>, state: State): void {

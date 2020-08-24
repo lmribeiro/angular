@@ -85,6 +85,7 @@ export class FileLinker<TStatement, TExpression> {
       interpolationConfig: interpolation,
       range,
       enableI18nLegacyMessageIdFormat: this.options.enableI18nLegacyMessageIdFormat,
+      preserveWhitespaces: metaObj.getBoolean('preserveWhitespaces'),
     });
     if (template.errors !== undefined) {
       const errors = template.errors.map(err => err.toString()).join(', ');

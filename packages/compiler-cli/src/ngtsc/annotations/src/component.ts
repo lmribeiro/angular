@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {compileComponentFromMetadata, compileDeclareComponentFromMetadata, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DomElementSchemaRegistry, Expression, ExternalExpr, Identifiers, InterpolationConfig, LexerRange, makeBindingParser, ParseError, ParseSourceFile, parseTemplate, R3ComponentMetadata, R3DirectiveMetadata, R3FactoryTarget, R3TargetBinder, R3UsedDirectiveMetadata, SchemaMetadata, SelectorMatcher, Statement, TmplAstNode, WrappedNodeExpr} from '@angular/compiler';
+import {compileComponentFromMetadata, compileDeclareComponentFromMetadata, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DomElementSchemaRegistry, Expression, ExternalExpr, Identifiers, InterpolationConfig, LexerRange, makeBindingParser, ParsedTemplate, ParseSourceFile, parseTemplate, R3ComponentMetadata, R3FactoryTarget, R3TargetBinder, R3UsedDirectiveMetadata, SchemaMetadata, SelectorMatcher, Statement, WrappedNodeExpr} from '@angular/compiler';
 import * as ts from 'typescript';
 
 import {CycleAnalyzer} from '../../cycles';
@@ -315,7 +315,6 @@ export class ComponentDecoratorHandler implements
           template: {
             template: template.template,
             nodes: template.emitNodes,
-            type: template.sourceMapping.type,
             ngContentSelectors: template.ngContentSelectors,
           },
           encapsulation,
@@ -611,7 +610,8 @@ export class ComponentDecoratorHandler implements
       node: ClassDeclaration, analysis: Readonly<ComponentAnalysisData>,
       resolution: Readonly<ComponentResolutionData>, pool: ConstantPool): CompileResult[] {
     const meta: R3ComponentMetadata = {...analysis.meta, ...resolution};
-    const res = compileDeclareComponentFromMetadata(meta, pool, makeBindingParser());
+    const res =
+        compileDeclareComponentFromMetadata(meta, analysis.template, pool, makeBindingParser());
     const factoryRes = compileNgFactoryDefField(
         {...meta, injectFn: Identifiers.directiveInject, target: R3FactoryTarget.Component});
     if (analysis.metadataStmt !== null) {
@@ -850,6 +850,7 @@ export class ComponentDecoratorHandler implements
 
     return {
       interpolation,
+      preserveWhitespaces,
       emitNodes,
       diagNodes,
       styleUrls,
@@ -915,81 +916,6 @@ function sourceMapUrl(resourceUrl: string): string {
   }
 }
 
-
-/**
- * Information about the template which was extracted during parsing.
- *
- * This contains the actual parsed template as well as any metadata collected during its parsing,
- * some of which might be useful for re-parsing the template with different options.
- */
-export interface ParsedTemplate {
-  /**
-   * The `InterpolationConfig` specified by the user.
-   */
-  interpolation: InterpolationConfig;
-
-  /**
-   * A full path to the file which contains the template.
-   *
-   * This can be either the original .ts file if the template is inline, or the .html file if an
-   * external file was used.
-   */
-  templateUrl: string;
-
-  /**
-   * The string contents of the template.
-   *
-   * This is the "logical" template string, after expansion of any escaped characters (for inline
-   * templates). This may differ from the actual template bytes as they appear in the .ts file.
-   */
-  template: string;
-
-  /**
-   * Any errors from parsing the template the first time.
-   */
-  errors?: ParseError[]|undefined;
-
-  /**
-   * The template AST, parsed according to the user's specifications.
-   */
-  emitNodes: TmplAstNode[];
-
-  /**
-   * The template AST, parsed in a manner which preserves source map information for diagnostics.
-   *
-   * Not useful for emit.
-   */
-  diagNodes: TmplAstNode[];
-
-  /**
-   *
-   */
-
-  /**
-   * Any styleUrls extracted from the metadata.
-   */
-  styleUrls: string[];
-
-  /**
-   * Any inline styles extracted from the metadata.
-   */
-  styles: string[];
-
-  /**
-   * Any ng-content selectors extracted from the template.
-   */
-  ngContentSelectors: string[];
-
-  /**
-   * Whether the template was inline.
-   */
-  isInline: boolean;
-
-  /**
-   * The `ParseSourceFile` for the template.
-   */
-  file: ParseSourceFile;
-}
 
 export interface ParsedTemplateWithSource extends ParsedTemplate {
   sourceMapping: TemplateSourceMapping;

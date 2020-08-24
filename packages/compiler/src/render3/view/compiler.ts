@@ -29,7 +29,7 @@ import {prepareSyntheticListenerFunctionName, prepareSyntheticPropertyName, type
 
 import {R3ComponentDef, R3ComponentMetadata, R3DirectiveDef, R3DirectiveMetadata, R3HostMetadata, R3QueryMetadata} from './api';
 import {MIN_STYLING_BINDING_SLOTS_REQUIRED, StylingBuilder, StylingInstructionCall} from './styling_builder';
-import {BindingScope, makeBindingParser, prepareEventListenerParameters, renderFlagCheckIfStmt, resolveSanitizationFn, TemplateDefinitionBuilder, ValueConverter} from './template';
+import {BindingScope, makeBindingParser, ParsedTemplate, prepareEventListenerParameters, renderFlagCheckIfStmt, resolveSanitizationFn, TemplateDefinitionBuilder, ValueConverter} from './template';
 import {asLiteral, chainedInstruction, conditionallyCreateMapObjectLiteral, CONTEXT_NAME, DefinitionMap, getQueryPredicate, listPublicNames, mapToExpression, RENDER_FLAGS, TEMPORARY_NAME, temporaryAllocator} from './util';
 
 const EMPTY_ARRAY: any[] = [];
@@ -277,30 +277,30 @@ export function compileComponentFromMetadata(
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */
 export function compileDeclareComponentFromMetadata(
-    meta: R3ComponentMetadata, constantPool: ConstantPool,
+    meta: R3ComponentMetadata, template: ParsedTemplate, constantPool: ConstantPool,
     bindingParser: BindingParser): R3ComponentDef {
   const definitionMap = new DefinitionMap();
 
   definitionMap.set('version', o.literal(1));
 
   let templateSpan: ParseSourceSpan|null = null;
-  let templateStr = meta.template.template;
-  // TODO: we might need `diagNodes` here not `emitNodes` to account for whitespace removal
-  if (meta.template.nodes.length > 0) {
-    const templateStart = meta.template.nodes[0].sourceSpan;
-    const templateEnd = meta.template.nodes[meta.template.nodes.length - 1].sourceSpan;
-    if (meta.template.type === 'direct') {
+  let templateStr = template.template;
+  if (template.diagNodes.length > 0) {
+    const templateStart = template.diagNodes[0].sourceSpan;
+    const templateEnd = template.diagNodes[meta.template.nodes.length - 1].sourceSpan;
+    if (template.isInline) {
       // Unescape backslashes that were added since this was an inline template
       templateStr = unescape(templateStr);
       templateSpan = new ParseSourceSpan(
           templateStart.start.moveBy(-1), templateEnd.end.moveBy(1), templateStart.details);
-    } else if (meta.template.type === 'external') {
+    } else {
       templateSpan =
           new ParseSourceSpan(templateStart.start, templateEnd.end, templateStart.details);
     }
   }
   definitionMap.set('template', o.literal(templateStr, null, templateSpan));
-  definitionMap.set('templateType', o.literal(meta.template.type));
+  definitionMap.set('isInline', o.literal(template.isInline));
+  definitionMap.set('preserveWhitespaces', o.literal(template.preserveWhitespaces));
 
   definitionMap.set('styles', asLiteral(meta.styles));
 

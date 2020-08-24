@@ -22,7 +22,7 @@ import {LexerRange} from '../../ml_parser/lexer';
 import {isNgContainer as checkIsNgContainer, splitNsName} from '../../ml_parser/tags';
 import {mapLiteral} from '../../output/map_util';
 import * as o from '../../output/output_ast';
-import {ParseError, ParseSourceSpan} from '../../parse_util';
+import {ParseError, ParseSourceFile, ParseSourceSpan} from '../../parse_util';
 import {DomElementSchemaRegistry} from '../../schema/dom_element_schema_registry';
 import {CssSelector, SelectorMatcher} from '../../selector';
 import {BindingParser} from '../../template_parser/binding_parser';
@@ -2014,6 +2014,84 @@ export interface ParseTemplateOptions {
    */
   i18nNormalizeLineEndingsInICUs?: boolean;
 }
+
+/**
+ * Information about the template which was extracted during parsing.
+ *
+ * This contains the actual parsed template as well as any metadata collected during its parsing,
+ * some of which might be useful for re-parsing the template with different options.
+ */
+export interface ParsedTemplate {
+  /**
+   * The `InterpolationConfig` specified by the user.
+   */
+  interpolation: InterpolationConfig;
+
+  preserveWhitespaces: boolean;
+
+  /**
+   * A full path to the file which contains the template.
+   *
+   * This can be either the original .ts file if the template is inline, or the .html file if an
+   * external file was used.
+   */
+  templateUrl: string;
+
+  /**
+   * The string contents of the template.
+   *
+   * This is the "logical" template string, after expansion of any escaped characters (for inline
+   * templates). This may differ from the actual template bytes as they appear in the .ts file.
+   */
+  template: string;
+
+  /**
+   * Any errors from parsing the template the first time.
+   */
+  errors?: ParseError[]|undefined;
+
+  /**
+   * The template AST, parsed according to the user's specifications.
+   */
+  emitNodes: t.Node[];
+
+  /**
+   * The template AST, parsed in a manner which preserves source map information for diagnostics.
+   *
+   * Not useful for emit.
+   */
+  diagNodes: t.Node[];
+
+  /**
+   *
+   */
+
+  /**
+   * Any styleUrls extracted from the metadata.
+   */
+  styleUrls: string[];
+
+  /**
+   * Any inline styles extracted from the metadata.
+   */
+  styles: string[];
+
+  /**
+   * Any ng-content selectors extracted from the template.
+   */
+  ngContentSelectors: string[];
+
+  /**
+   * Whether the template was inline.
+   */
+  isInline: boolean;
+
+  /**
+   * The `ParseSourceFile` for the template.
+   */
+  file: ParseSourceFile;
+}
+
 
 /**
  * Parse a template into render3 `Node`s and additional metadata, with no other dependencies.

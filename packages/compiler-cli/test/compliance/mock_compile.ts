@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import {AotCompilerOptions} from '@angular/compiler';
+import {AngularCompilerOptions} from '@angular/compiler-cli';
 import {escapeRegExp} from '@angular/compiler/src/util';
 import {arrayToMockDir, MockCompilerHost, MockData, MockDirectory, toMockFileArray} from '@angular/compiler/test/aot/test_util';
 import {transformSync} from '@babel/core';
@@ -200,10 +200,10 @@ function buildMatcher(pieces: (string|RegExp)[]): {regexp: RegExp, groups: Map<s
 
 
 export function compile(
-    data: MockDirectory, angularFiles: MockData, options: AotCompilerOptions = {},
+    data: MockDirectory, angularFiles: MockData, options: AngularCompilerOptions = {},
     errorCollector: (error: any, fileName?: string) => void = error => {
       throw error;
-    }, enableI18nLegacyMessageIdFormat: boolean|undefined = false): {
+    }): {
   source: string,
 } {
   setFileSystem(new NodeJSFileSystem());
@@ -218,7 +218,6 @@ export function compile(
         target: ts.ScriptTarget.ES2015,
         module: ts.ModuleKind.ES2015,
         moduleResolution: ts.ModuleResolutionKind.NodeJs,
-        enableI18nLegacyMessageIdFormat,
         compilationModel: 'prelink',
         ...options,
       },
@@ -235,7 +234,7 @@ export function compile(
 
                        const result = transformSync(content, {
                          filename,
-                         plugins: [makeEs2015LinkerPlugin({enableI18nLegacyMessageIdFormat})],
+                         plugins: [makeEs2015LinkerPlugin(options)],
                          parserOpts: {sourceType: 'unambiguous'},
                        });
                        if (result === null) {
