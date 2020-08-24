@@ -23,14 +23,18 @@ export interface LinkerEnvironment<TStatement, TExpression> {
 export interface LinkerOptions {
   enableGlobalStatements: boolean;
   enableI18nLegacyMessageIdFormat: boolean;
+  i18nNormalizeLineEndingsInICUs: boolean;
 }
 
 export function createLinker<TStatement, TExpression>(
-    sourceUrl: string, code: string, env: LinkerEnvironment<TStatement, TExpression>,
-    {enableGlobalStatements = true, enableI18nLegacyMessageIdFormat = true}:
-        Partial<LinkerOptions> = {}): FileLinker<TStatement, TExpression> {
+    sourceUrl: string, code: string, env: LinkerEnvironment<TStatement, TExpression>, {
+      enableGlobalStatements = true,
+      enableI18nLegacyMessageIdFormat = true,
+      i18nNormalizeLineEndingsInICUs = false
+    }: Partial<LinkerOptions> = {}): FileLinker<TStatement, TExpression> {
   return new FileLinker(
-      sourceUrl, code, env, {enableGlobalStatements, enableI18nLegacyMessageIdFormat});
+      sourceUrl, code, env,
+      {enableGlobalStatements, enableI18nLegacyMessageIdFormat, i18nNormalizeLineEndingsInICUs});
 }
 
 export class FileLinker<TStatement, TExpression> {
@@ -86,6 +90,7 @@ export class FileLinker<TStatement, TExpression> {
       range,
       enableI18nLegacyMessageIdFormat: this.options.enableI18nLegacyMessageIdFormat,
       preserveWhitespaces: metaObj.getBoolean('preserveWhitespaces'),
+      i18nNormalizeLineEndingsInICUs: this.options.i18nNormalizeLineEndingsInICUs,
     });
     if (template.errors !== undefined) {
       const errors = template.errors.map(err => err.toString()).join(', ');

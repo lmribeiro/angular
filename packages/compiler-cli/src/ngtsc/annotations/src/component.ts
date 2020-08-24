@@ -817,7 +817,7 @@ export class ComponentDecoratorHandler implements
           range: templateRange,
           escapedString,
           enableI18nLegacyMessageIdFormat: this.enableI18nLegacyMessageIdFormat,
-          i18nNormalizeLineEndingsInICUs: this.i18nNormalizeLineEndingsInICUs,
+          i18nNormalizeLineEndingsInICUs: escapedString || this.i18nNormalizeLineEndingsInICUs,
         });
 
     // Unfortunately, the primary parse of the template above may not contain accurate source map
